@@ -4,6 +4,6 @@ public interface ICore {
     void resetCycleCount();
     int getCycleCount();
     void runOneInstruction();
-    short getPC();
+    int getPC();
     
 }
