@@ -1,4 +1,4 @@
-package eightbit;
+package com.davidconneely.z80core;
 
 public class Main {
     public static void main(String[] args) {

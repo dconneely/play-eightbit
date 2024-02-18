@@ -1,7 +1,4 @@
-package eightbit.z80core;
-
-import eightbit.IBus;
-import eightbit.ICore;
+package com.davidconneely.z80core;
 
 public class Z80Core implements ICore {
     private IBus bus;
@@ -32,7 +29,7 @@ public class Z80Core implements ICore {
             cycles += 4;
             return;
         }
-        int opCode = bus.readOpCode(pc++);
+        int opCode = bus.readInstruction(pc++);
         int x = (opCode & 0xC0); // values 0x00,0x40,0x80 or 0x80
         int y = (opCode & 0x38); // not shifting here to avoid unnecessary work
         int z = (opCode & 0x07);
@@ -298,5 +295,4 @@ public class Z80Core implements ICore {
     public final void setSP(final int n) {
         sp = n&0xFFFF;
     }
-
 }

@@ -1,7 +1,4 @@
-package eightbit.z80core;
-
-import eightbit.IBus;
-import eightbit.ICore;
+package com.davidconneely.z80core;
 
 import java.io.PrintWriter;
 
