@@ -6,9 +6,13 @@ import java.io.*;
  * Some of the tests use a simple CPM BDOS call interface to produce test output.
  * This class supports tests that work in that way.
  */
-public class CpmVerificationMachine implements IMachine {
-    @Override
-    public String run(final byte[] program) throws IOException {
+final class CpmVerificationMachine {
+    /**
+     * Load and run the supplied program.
+     * @param program the binary image of the program
+     * @return the output of the program.
+     */
+    String run(final byte[] program) throws IOException {
         final IBus bus = new SimpleBus();
         bus.writeMemory(0x0005, 0xC9); // BDOS RET
         bus.writeMemory(0x0100, program, 0, program.length);

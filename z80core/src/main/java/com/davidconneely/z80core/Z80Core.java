@@ -1,6 +1,6 @@
 package com.davidconneely.z80core;
 
-public final class Z80Core implements ICore {
+public final class Z80Core {
     private final IBus bus;
     private final State state;
 
@@ -13,8 +13,7 @@ public final class Z80Core implements ICore {
         return state;
     }
 
-    @Override
-    public void step() {
+    void step() {
         if (state.halted()) {
             // execute an effective NOP
             state.cyclesInc(4);
