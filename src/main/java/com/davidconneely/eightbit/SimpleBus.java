@@ -1,4 +1,4 @@
-package com.davidconneely.z80core;
+package com.davidconneely.eightbit;
 
 public class SimpleBus implements IBus {
     private static final int MEMORY_SIZE = 0x10000;
@@ -51,7 +51,7 @@ public class SimpleBus implements IBus {
         if (address < 0 || offset < 0 || length < 0
                 || address >= MEMORY_SIZE || length > MEMORY_SIZE || address + length > MEMORY_SIZE
                 || offset >= arrayLen || offset + length > arrayLen) {
-            throw new ArrayIndexOutOfBoundsException();
+            throw new IndexOutOfBoundsException();
         }
     }
 }

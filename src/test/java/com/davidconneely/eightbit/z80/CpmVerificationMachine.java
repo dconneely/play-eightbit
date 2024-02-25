@@ -1,4 +1,8 @@
-package com.davidconneely.z80core;
+package com.davidconneely.eightbit.z80;
+
+import com.davidconneely.eightbit.IBus;
+import com.davidconneely.eightbit.SimpleBus;
+import com.davidconneely.eightbit.z80.Core;
 
 import java.io.*;
 
@@ -17,7 +21,7 @@ final class CpmVerificationMachine {
         bus.writeMemory(0x0005, 0xC9); // BDOS RET
         bus.writeMemory(0x0100, program, 0, program.length);
         final StringBuilder out = new StringBuilder();
-        Z80Core z80 = new Z80Core(bus);
+        Core z80 = new Core(bus);
         z80.state().pc(0x0100);
         boolean terminated = false;
         while (!terminated) {

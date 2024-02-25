@@ -1,6 +1,6 @@
-package com.davidconneely.z80core;
+package com.davidconneely.eightbit.z80;
 
-final class State {
+public final class State {
     private int cycles;
     private boolean halted;
     private int a, b, c, d, e, h, l, w, z, a_, b_, c_, d_, e_, f_, h_, l_, ix, iy, pc, sp;

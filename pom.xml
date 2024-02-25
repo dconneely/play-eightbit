@@ -4,10 +4,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.davidconneely</groupId>
-    <artifactId>z80core</artifactId>
+    <artifactId>play-eightbit</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
-    <name>z80core</name>
+    <name>play-eightbit</name>
     <description>Emulate a Zilog Z80 CPU</description>
 
     <properties>

@@ -1,10 +1,12 @@
-package com.davidconneely.z80core;
+package com.davidconneely.eightbit.z80;
 
-public final class Z80Core {
+import com.davidconneely.eightbit.IBus;
+
+final class Core {
     private final IBus bus;
     private final State state;
 
-    public Z80Core(final IBus bus) {
+    public Core(final IBus bus) {
         this.bus = bus;
         this.state = new State();
     }

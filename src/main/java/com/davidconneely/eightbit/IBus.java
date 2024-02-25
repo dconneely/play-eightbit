@@ -1,4 +1,4 @@
-package com.davidconneely.z80core;
+package com.davidconneely.eightbit;
 
 public interface IBus {
     /**
