@@ -11,10 +11,6 @@ final class Core {
         this.state = new State();
     }
 
-    State state() {
-        return state;
-    }
-
     void step() {
         if (state.halted()) { // execute an effective NOP
             return;
@@ -43,15 +39,7 @@ final class Core {
             case 0x0D/*DEC C*/ ->        state.c(dec8(state.c()));
             case 0x0E/*LD C,imm8*/ ->    state.c(bus.readMemory(state.pcInc1()));
             case 0x0F/*RRCA*/ ->         rrca();
-            case 0x10/*DJNZ imm8*/ -> {
-                state.b(state.b() - 1);
-                if (state.b() != 0) {
-                    int offset = bus.readMemory(state.pc());
-                    state.pc(state.pc() + (offset < 0x80 ? offset : offset - 0x100) + 1);
-                } else {
-                    state.pcInc1();
-                }
-            }
+            case 0x10/*DJNZ imm8*/ ->    djnz();
             case 0x11/*LD DE,imm16*/ ->  state.de(bus.readWord(state.pcInc2()));
             case 0x12/*LD (DE),A*/ ->    bus.writeMemory(state.de(), state.a());
             case 0x13/*INC DE*/ ->       state.de(inc16(state.de()));
@@ -59,10 +47,7 @@ final class Core {
             case 0x15/*DEC D*/ ->        state.d(dec8(state.d()));
             case 0x16/*LD D,imm8*/ ->    state.d(bus.readMemory(state.pcInc1()));
             case 0x17/*RLA*/ ->          rla();
-            case 0x18/*JR imm8*/ -> {
-                int offset = bus.readMemory(state.pc());
-                state.pc(state.pc() + (offset < 0x80 ? offset : offset - 0x100) + 1);
-            }
+            case 0x18/*JR imm8*/ ->      jr0();
             case 0x19/*ADD HL,DE*/ ->    state.hl(add16(state.de()));
             case 0x1A/*LD A,(DE)*/ ->    state.a(bus.readMemory(state.de()));
             case 0x1B/*DEC DE*/ ->       state.de(dec16(state.de()));
@@ -70,14 +55,7 @@ final class Core {
             case 0x1D/*DEC E*/ ->        state.e(dec8(state.e()));
             case 0x1E/*LD E,imm8*/ ->    state.e(bus.readMemory(state.pcInc1()));
             case 0x1F/*RRA*/ ->          rra();
-            case 0x20/*JR NZ,imm8*/ -> {
-                if (!state.zf()) {
-                    int offset = bus.readMemory(state.pc());
-                    state.pc(state.pc() + (offset < 0x80 ? offset : offset - 0x100) + 1);
-                } else {
-                    state.pcInc1();
-                }
-            }
+            case 0x20/*JR NZ,imm8*/ ->   jr1(!state.zf());
             case 0x21/*LD HL,imm16*/ ->  state.hl(bus.readWord(state.pcInc2()));
             case 0x22/*LD (imm16),HL*/ -> bus.writeWord(bus.readWord(state.pcInc2()), state.hl());
             case 0x23/*INC HL*/ ->       state.hl(inc16(state.hl()));
@@ -85,14 +63,7 @@ final class Core {
             case 0x25/*DEC H*/ ->        state.h(dec8(state.h()));
             case 0x26/*LD H,imm8*/ ->    state.h(bus.readMemory(state.pcInc1()));
             case 0x27/*DAA*/ ->          daa();
-            case 0x28/*JR Z,imm8*/-> {
-                if (state.zf()) {
-                    int offset = bus.readMemory(state.pc());
-                    state.pc(state.pc() + (offset < 0x80 ? offset : offset - 0x100) + 1);
-                } else {
-                    state.pcInc1();
-                }
-            }
+            case 0x28/*JR Z,imm8*/->     jr1(state.zf());
             case 0x29/*ADD HL,HL*/ ->    state.hl(add16(state.hl()));
             case 0x2A/*LD HL,(imm16)*/ -> state.hl(bus.readWord(bus.readWord(state.pcInc2())));
             case 0x2B/*DEC HL*/ ->       state.hl(dec16(state.hl()));
@@ -100,14 +71,7 @@ final class Core {
             case 0x2D/*DEC L*/ ->        state.l(dec8(state.l()));
             case 0x2E/*LD L,imm8*/ ->    state.l(bus.readMemory(state.pcInc1()));
             case 0x2F/*CPL*/ ->          cpl();
-            case 0x30/*JR NC,imm8*/ -> {
-                if (!state.cf()) {
-                    int offset = bus.readMemory(state.pc());
-                    state.pc(state.pc() + (offset < 0x80 ? offset : offset - 0x100) + 1);
-                } else {
-                    state.pcInc1();
-                }
-            }
+            case 0x30/*JR NC,imm8*/ ->   jr1(!state.cf());
             case 0x31/*LD SP,imm16*/ ->  state.sp(bus.readWord(state.pcInc2()));
             case 0x32/*LD (imm16),A*/ -> bus.writeMemory(bus.readWord(state.pcInc2()), state.a());
             case 0x33/*INC SP*/ ->       state.sp(inc16(state.sp()));
@@ -115,14 +79,7 @@ final class Core {
             case 0x35/*DEC (HL)*/ ->     bus.writeMemory(state.hl(), dec8(bus.readMemory(state.hl())));
             case 0x36/*LD (HL),imm8*/ -> bus.writeMemory(state.hl(), bus.readMemory(state.pcInc1()));
             case 0x37/*SCF*/ ->          scf();
-            case 0x38/*JR C,imm8*/ -> {
-                if (state.cf()) {
-                    int offset = bus.readMemory(state.pc());
-                    state.pc(state.pc() + (offset < 0x80 ? offset : offset - 0x100) + 1);
-                } else {
-                    state.pcInc1();
-                }
-            }
+            case 0x38/*JR C,imm8*/ ->    jr1(state.cf());
             case 0x39/*ADD HL,SP*/ ->    state.hl(add16(state.sp()));
             case 0x3A/*LD A,(imm16)*/ -> state.a(bus.readMemory(bus.readWord(state.pcInc2())));
             case 0x3B/*DEC SP*/ ->       state.sp(dec16(state.sp()));
@@ -259,97 +216,119 @@ final class Core {
             case 0xBE/*CP (HL)*/ ->      cp8(bus.readMemory(state.hl()));
             case 0xBF/*CP A*/ ->         cp8(state.a());
             case 0xC0/*RET NZ*/ ->       ret1(!state.zf());
-            case 0xC1/*POP BC*/ ->       {}
-            case 0xC2/*JP NZ,imm16*/ ->  {}
-            case 0xC3/*JP imm16*/ ->     {}
-            case 0xC4/*CALL NZ,imm16*/ -> {}
-            case 0xC5/*PUSH BC*/ ->      {}
-            case 0xC6/*ADD A,imm8*/ ->   {}
-            case 0xC7/*RST 00H*/ ->      {}
+            case 0xC1/*POP BC*/ ->       state.bc(bus.readWord(state.spInc2()));
+            case 0xC2/*JP NZ,imm16*/ ->  jp1(!state.zf());
+            case 0xC3/*JP imm16*/ ->     jp0();
+            case 0xC4/*CALL NZ,imm16*/ -> call1(!state.zf());
+            case 0xC5/*PUSH BC*/ ->      bus.writeWord(state.spDec2(), state.bc());
+            case 0xC6/*ADD A,imm8*/ ->   add8(bus.readMemory(state.pcInc1()));
+            case 0xC7/*RST 00H*/ ->      rst(0x0000);
             case 0xC8/*RET Z*/ ->        ret1(state.zf());
-            case 0xC9/*RET*/ ->          {}
-            case 0xCA/*JP Z,imm16*/ ->   {}
-            case 0xCB/*prefix_cb*/ ->    {}
-            case 0xCC/*CALL Z,imm16*/ -> {}
-            case 0xCD/*CALL imm16*/ ->   {}
-            case 0xCE/*ADC A,imm8*/ ->   {}
-            case 0xCF/*RST 08H*/ ->      {}
+            case 0xC9/*RET*/ ->          ret0();
+            case 0xCA/*JP Z,imm16*/ ->   jp1(state.zf());
+            case 0xCB/*prefix_cb*/ ->    decodeCB();
+            case 0xCC/*CALL Z,imm16*/ -> call1(!state.zf());
+            case 0xCD/*CALL imm16*/ ->   call0();
+            case 0xCE/*ADC A,imm8*/ ->   adc8(bus.readMemory(state.pcInc1()));
+            case 0xCF/*RST 08H*/ ->      rst(0x0008);
             case 0xD0/*RET NC*/ ->       ret1(!state.cf());
-            case 0xD1/*POP DE*/ ->       {}
-            case 0xD2/*JP NC,imm16*/ ->  {}
-            case 0xD3/*OUT (imm8),A*/ -> {}
-            case 0xD4/*CALL NC,imm16*/ -> {}
-            case 0xD5/*PUSH DE*/ ->      {}
-            case 0xD6/*SUB imm8*/ ->     {}
-            case 0xD7/*RST 10H*/ ->      {}
+            case 0xD1/*POP DE*/ ->       state.de(bus.readWord(state.spInc2()));
+            case 0xD2/*JP NC,imm16*/ ->  jp1(!state.cf());
+            case 0xD3/*OUT (imm8),A*/ -> bus.writeIoPort(bus.readMemory(state.pcInc1()), state.a());
+            case 0xD4/*CALL NC,imm16*/ -> call1(!state.cf());
+            case 0xD5/*PUSH DE*/ ->      bus.writeWord(state.spDec2(), state.de());
+            case 0xD6/*SUB imm8*/ ->     sub8(bus.readMemory(state.pcInc1()));
+            case 0xD7/*RST 10H*/ ->      rst(0x0010);
             case 0xD8/*RET C*/ ->        ret1(state.cf());
-            case 0xD9/*EXX*/ ->          {}
-            case 0xDA/*JP C,imm16*/ ->   {}
-            case 0xDB/*IN A,(imm8)*/ ->  {}
-            case 0xDC/*CALL C,imm16*/ -> {}
-            case 0xDD/*prefix_dd*/ ->    {}
-            case 0xDE/*SBC A,imm8*/ ->   {}
-            case 0xDF/*RST 18H*/ ->      {}
-            case 0xE0/*RET PO*/ ->       {}
-            case 0xE1/*POP HL*/ ->       {}
-            case 0xE2/*JP PO,imm16*/ ->  {}
-            case 0xE3/*EX (SP),HL*/ ->   {}
-            case 0xE4/*CALL PO,imm16*/ -> {}
-            case 0xE5/*PUSH HL*/ ->      {}
-            case 0xE6/*AND imm8*/ ->     {}
-            case 0xE7/*RST 20H*/ ->      {}
-            case 0xE8/*RET PE*/ ->       {}
-            case 0xE9/*JP (HL)*/ ->      {}
-            case 0xEA/*JP PE,imm16*/ ->  {}
-            case 0xEB/*EX DE,HL*/ ->     {}
-            case 0xEC/*CALL PE,imm16*/ -> {}
-            case 0xED/*prefix_ed*/ ->    {}
-            case 0xEE/*XOR imm8*/ ->     {}
-            case 0xEF/*RST 28H*/ ->      {}
-            case 0xF0/*RET P*/ ->        {}
-            case 0xF1/*POP AF*/ ->       {}
-            case 0xF2/*JP P,imm16*/ ->   {}
-            case 0xF3/*DI*/ ->           {}
-            case 0xF4/*CALL P,imm16*/ -> {}
-            case 0xF5/*PUSH AF*/ ->      {}
-            case 0xF6/*OR imm8*/ ->      {}
-            case 0xF7/*RST 30H*/ ->      {}
-            case 0xF8/*RET M*/ ->        {}
-            case 0xF9/*LD SP,HL*/ ->     {}
-            case 0xFA/*JP M,imm16*/ ->   {}
-            case 0xFB/*EI*/ ->           {}
-            case 0xFC/*CALL M,imm16*/ -> {}
-            case 0xFD/*prefix_fd*/ ->    {}
-            case 0xFE/*CP imm8*/ ->      {}
-            case 0xFF/*RST 38H*/ ->      {}
+            case 0xD9/*EXX*/ ->          exx();
+            case 0xDA/*JP C,imm16*/ ->   jp1(state.cf());
+            case 0xDB/*IN A,(imm8)*/ ->  state.a(bus.readIoPort(bus.readMemory(state.pcInc1())));
+            case 0xDC/*CALL C,imm16*/ -> call1(state.cf());
+            case 0xDD/*prefix_dd*/ ->    decodeDD();
+            case 0xDE/*SBC A,imm8*/ ->   sbc8(bus.readMemory(state.pcInc1()));
+            case 0xDF/*RST 18H*/ ->      rst(0x0018);
+            case 0xE0/*RET PO*/ ->       ret1(!state.pf());
+            case 0xE1/*POP HL*/ ->       state.hl(bus.readWord(state.spInc2()));
+            case 0xE2/*JP PO,imm16*/ ->  jp1(!state.pf());
+            case 0xE3/*EX (SP),HL*/ ->   exStkHl();
+            case 0xE4/*CALL PO,imm16*/ -> call1(!state.pf());
+            case 0xE5/*PUSH HL*/ ->      bus.writeWord(state.spDec2(), state.hl());
+            case 0xE6/*AND imm8*/ ->     and8(bus.readMemory(state.pcInc1()));
+            case 0xE7/*RST 20H*/ ->      rst(0x0020);
+            case 0xE8/*RET PE*/ ->       ret1(state.pf());
+            case 0xE9/*JP (HL)*/ ->      state.pc(bus.readWord(state.hl()));
+            case 0xEA/*JP PE,imm16*/ ->  jp1(state.pf());
+            case 0xEB/*EX DE,HL*/ ->     exDeHl();
+            case 0xEC/*CALL PE,imm16*/ -> call1(state.pf());
+            case 0xED/*prefix_ed*/ ->    decodeED();
+            case 0xEE/*XOR imm8*/ ->     xor8(bus.readMemory(state.pcInc1()));
+            case 0xEF/*RST 28H*/ ->      rst(0x0028);
+            case 0xF0/*RET P*/ ->        ret1(!state.sf());
+            case 0xF1/*POP AF*/ ->       state.af(bus.readWord(state.spInc2()));
+            case 0xF2/*JP P,imm16*/ ->   jp1(!state.sf());
+            case 0xF3/*DI*/ ->           di();
+            case 0xF4/*CALL P,imm16*/ -> call1(!state.sf());
+            case 0xF5/*PUSH AF*/ ->      bus.writeWord(state.spDec2(), state.af());
+            case 0xF6/*OR imm8*/ ->      or8(bus.readMemory(state.pcInc1()));
+            case 0xF7/*RST 30H*/ ->      rst(0x0030);
+            case 0xF8/*RET M*/ ->        ret1(state.sf());
+            case 0xF9/*LD SP,HL*/ ->     state.sp(state.hl());
+            case 0xFA/*JP M,imm16*/ ->   jp1(state.sf());
+            case 0xFB/*EI*/ ->           ei();
+            case 0xFC/*CALL M,imm16*/ -> call1(state.sf());
+            case 0xFD/*prefix_fd*/ ->    decodeFD();
+            case 0xFE/*CP imm8*/ ->      cp8(bus.readMemory(state.pcInc1()));
+            case 0xFF/*RST 38H*/ ->      rst(0x0038);
         }
     }
 
-    private int inc16(int in) {
-        // TODO set flags
-        return in + 1;
+    private void decodeCB() {
+        // TODO
     }
-    private int inc8(int in) {
-        // TODO set flags
-        return in + 1;
+    private void decodeDD() {
+        // TODO
     }
-    private int dec8(int in) {
-        // TODO set flags
-        return in - 1;
+    private void decodeED() {
+        // TODO
+    }
+    private void decodeFD() {
+        // TODO
+    }
+
+    private int inc16(int n) {
+        return (n+1)&0xFFFF;
+    }
+    private int inc8(int n) {
+        state.pf(n == 0x7F);
+        n = (n+1)&0xFF;
+        state.sf((n & 0x80) != 0);
+        state.zf(n == 0);
+        state.nf(false);
+        return n;
+    }
+    private int dec8(int n) {
+        state.pf(n == 0x80);
+        n = (n-1)&0xFF;
+        state.sf((n & 0x80) != 0);
+        state.zf(n == 0);
+        state.nf(true);
+        return n;
     }
     private int add16(int in) {
+        state.nf(false);
         // TODO set flags
         return state.hl() + in;
     }
-    private int dec16(int in) {
-        // TODO set flags
-        return in - 1;
+    private int dec16(int n) {
+        return (n-1)&0xFFFF;
     }
     private void rlca() {
         // TODO
     }
     private void exAfAf_() {
-        // TODO
+        int af = state.af();
+        state.af(state.af_());
+        state.af_(af);
     }
     private void rrca() {
         // TODO
@@ -364,13 +343,24 @@ final class Core {
         // TODO
     }
     private void cpl() {
-        // TODO
+        state.a(state.a() ^ 0xFF);
+        state.hf(true);
+        state.nf(true);
     }
     private void scf() {
-        // TODO
+        state.cf(true);
+        state.hf(false);
+        state.nf(false);
     }
     private void ccf() {
-        // TODO
+        if (state.cf()) {
+            state.cf(false);
+            state.hf(true);
+        } else {
+            state.cf(true);
+            state.hf(false);
+        }
+        state.nf(false);
     }
     private void add8(int in) {
         // TODO set flags
@@ -405,9 +395,66 @@ final class Core {
         int diff = state.a() - in;
         state.zf(diff == 0);
     }
+    private void ret0() {
+        state.pc(bus.readWord(state.spInc2()));
+    }
     private void ret1(boolean cond) {
-        if (cond) {
-            state.pc(bus.readWord(state.spInc2()));
-        }
+        if (cond) ret0();
+    }
+    private void jr0() {
+        int offset = bus.readMemory(state.pc());
+        state.pc(state.pc() + (offset < 0x80 ? offset : offset - 0x100) + 1);
+    }
+    private void jr1(boolean cond) {
+        if (cond) jr0(); else state.pcInc1();
+    }
+    private void djnz() {
+        state.b(state.b() - 1);
+        if (state.b() != 0) jr0(); else state.pcInc1();
+    }
+    private void jp0() {
+        state.pc(bus.readWord(state.pc()));
+    }
+    private void jp1(boolean cond) {
+        if (cond) jp0(); else state.pcInc2();
+    }
+    private void call0() {
+        int address = bus.readWord(state.pcInc2());
+        bus.writeWord(state.spDec2(), state.pc());
+        state.pc(address);
+    }
+    private void call1(boolean cond) {
+        if (cond) call0(); else state.pcInc2();;
+    }
+    private void rst(int address) {
+        bus.writeWord(state.spDec2(), state.pc());
+        state.pc(address & 0x0038);
+    }
+    private void exx() {
+        int bc = state.bc();
+        int de = state.de();
+        int hl = state.hl();
+        state.bc(state.bc_());
+        state.de(state.de_());
+        state.hl(state.hl_());
+        state.bc_(bc);
+        state.de_(de);
+        state.hl_(hl);
+    }
+    private void exStkHl() {
+        int hl = state.hl();
+        state.hl(bus.readWord(state.sp()));
+        bus.writeWord(state.sp(), hl);
+    }
+    private void exDeHl() {
+        int de = state.de();
+        state.de(state.hl());
+        state.hl(de);
+    }
+    private void di() {
+        // TODO
+    }
+    private void ei() {
+        // TODO
     }
 }

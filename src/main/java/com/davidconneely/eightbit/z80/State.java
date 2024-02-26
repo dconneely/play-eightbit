@@ -278,25 +278,31 @@ public final class State {
 
     // --- Utility methods ---
 
-    /** Post-increment PC by 1. */
+    /** Post-increment PC by 1 (used for immediate bytes). */
     int pcInc1() {
         int pc_ = pc;
         pc = (pc+1)&0xFFFF;
         return pc_;
     }
 
-    /** Post-increment PC by 2. */
+    /** Post-increment PC by 2 (used for immediate words). */
     int pcInc2() {
         int pc_ = pc;
         pc = (pc+2)&0xFFFF;
         return pc_;
     }
 
-    /** Post-increment SP by 2 (POP). */
+    /** Post-increment SP by 2 (used for POP). */
     int spInc2() {
         int sp_ = sp;
         sp = (sp+2)&0xFFFF;
         return sp_;
+    }
+
+    /** Pre-decrement SP by 2 (used for PUSH). */
+    int spDec2() {
+        sp = (sp-2)&0xFFFF;
+        return sp;
     }
 
     String formatted(final int op) {
