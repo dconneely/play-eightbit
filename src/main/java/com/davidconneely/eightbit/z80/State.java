@@ -288,6 +288,22 @@ public final class State {
 
     // --- Utility methods ---
 
+    void pcInc1() {
+        pc = (pc + 1) & 0xFFFF;
+    }
+
+    void pcInc2() {
+        pc = (pc + 2) & 0xFFFF;
+    }
+
+    void spDec2() {
+        sp = (sp - 2) & 0xFFFF;
+    }
+
+    void spInc2() {
+        sp = (sp + 2) & 0xFFFF;
+    }
+
     String formatted(final int op) {
         return String.format("pc=0x%04x,sp=0x%04x,op=0x%02x,"
                         + "a=0x%02x,b=0x%02x,c=0x%02x,d=0x%02x,e=0x%02x,h=0x%02x,l=0x%02x,"

@@ -2,9 +2,8 @@ package com.davidconneely.eightbit.z80;
 
 import com.davidconneely.eightbit.IBus;
 import com.davidconneely.eightbit.SimpleBus;
-import com.davidconneely.eightbit.z80.Core;
 
-import java.io.*;
+import java.io.IOException;
 
 /**
  * Some of the tests use a simple CPM BDOS call interface to produce test output.
