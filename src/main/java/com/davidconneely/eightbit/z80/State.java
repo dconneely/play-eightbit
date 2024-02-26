@@ -1,20 +1,10 @@
 package com.davidconneely.eightbit.z80;
 
 public final class State {
-    private int cycles;
     private boolean halted;
     private int a, b, c, d, e, h, l, w, z, a_, b_, c_, d_, e_, f_, h_, l_, ix, iy, pc, sp;
     private boolean cf, nf, pf, yf, hf, xf, zf, sf;
 
-    void cyclesZero() {
-        cycles = 0;
-    }
-    void cyclesInc(final int inc) {
-        cycles += inc;
-    }
-    int cycles() {
-        return cycles;
-    }
     boolean halted() {
         return halted;
     }
@@ -288,20 +278,25 @@ public final class State {
 
     // --- Utility methods ---
 
-    void pcInc1() {
-        pc = (pc + 1) & 0xFFFF;
+    /** Post-increment PC by 1. */
+    int pcInc1() {
+        int pc_ = pc;
+        pc = (pc+1)&0xFFFF;
+        return pc_;
     }
 
-    void pcInc2() {
-        pc = (pc + 2) & 0xFFFF;
+    /** Post-increment PC by 2. */
+    int pcInc2() {
+        int pc_ = pc;
+        pc = (pc+2)&0xFFFF;
+        return pc_;
     }
 
-    void spDec2() {
-        sp = (sp - 2) & 0xFFFF;
-    }
-
-    void spInc2() {
-        sp = (sp + 2) & 0xFFFF;
+    /** Post-increment SP by 2 (POP). */
+    int spInc2() {
+        int sp_ = sp;
+        sp = (sp+2)&0xFFFF;
+        return sp_;
     }
 
     String formatted(final int op) {
