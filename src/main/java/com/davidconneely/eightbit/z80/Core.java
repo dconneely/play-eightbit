@@ -20,8 +20,6 @@ final class Core {
 
     private void decode_0x00uFF(int opCode) {
         int x = (opCode & 0xC0); // values 0x00,40,80,C0
-        //int y = (opCode & 0x38); // values 0x00,08,10,18,20,28,30,38
-        //int z = (opCode & 0x07); // values 0x00,01,02,03,04,05,06,07
         switch (x) {
             case 0x00/*0x00-3F*/ -> decode_0x00u3F(opCode);
             case 0x40/*0x40-7F*/ -> decode_0x40u7F(opCode);
@@ -353,27 +351,118 @@ final class Core {
         }
     }
 
+    // shift and rotate group
     private void decode_0xCB_00u3F(int opCode) {
         switch (opCode) {
-            // TODO implementation
+            case 0x00/*RLC B*/ -> state.b(rlc(state.b())); // ZUM(pp.194-195)
+            case 0x01/*RLC C*/ -> state.c(rlc(state.c())); // ZUM(pp.194-195)
+            case 0x02/*RLC D*/ -> state.d(rlc(state.d())); // ZUM(pp.194-195)
+            case 0x03/*RLC E*/ -> state.e(rlc(state.e())); // ZUM(pp.194-195)
+            case 0x04/*RLC H*/ -> state.h(rlc(state.h())); // ZUM(pp.194-195)
+            case 0x05/*RLC L*/ -> state.l(rlc(state.l())); // ZUM(pp.194-195)
+            case 0x06/*RLC (HL)*/ -> bus.writeMemory(state.hl(), rlc(bus.readMemory(state.hl()))); // ZUM(pp.196-197)
+            case 0x07/*RLC A*/ -> state.a(rlc(state.a())); // ZUM(pp.194-195)
+            case 0x08/*RRC B*/ -> state.b(rrc(state.b())); // ZUM(pp.205-207)
+            case 0x09/*RRC C*/ -> state.c(rrc(state.c())); // ZUM(pp.205-207)
+            case 0x0A/*RRC D*/ -> state.d(rrc(state.d())); // ZUM(pp.205-207)
+            case 0x0B/*RRC E*/ -> state.e(rrc(state.e())); // ZUM(pp.205-207)
+            case 0x0C/*RRC H*/ -> state.h(rrc(state.h())); // ZUM(pp.205-207)
+            case 0x0D/*RRC L*/ -> state.l(rrc(state.l())); // ZUM(pp.205-207)
+            case 0x0E/*RRC (HL)*/ -> bus.writeMemory(state.hl(), rrc(bus.readMemory(state.hl()))); // ZUM(pp.205-207)
+            case 0x0F/*RRC A*/ -> state.a(rrc(state.a())); // ZUM(pp.205-207)
+            case 0x10/*RL B*/ -> state.b(rl(state.b())); // ZUM(pp.202-204)
+            case 0x11/*RL C*/ -> state.c(rl(state.c())); // ZUM(pp.202-204)
+            case 0x12/*RL D*/ -> state.d(rl(state.d())); // ZUM(pp.202-204)
+            case 0x13/*RL E*/ -> state.e(rl(state.e())); // ZUM(pp.202-204)
+            case 0x14/*RL H*/ -> state.h(rl(state.h())); // ZUM(pp.202-204)
+            case 0x15/*RL L*/ -> state.l(rl(state.l())); // ZUM(pp.202-204)
+            case 0x16/*RL (HL)*/ -> bus.writeMemory(state.hl(), rl(bus.readMemory(state.hl()))); // ZUM(pp.202-204)
+            case 0x17/*RL A*/ -> state.a(rl(state.a())); // ZUM(pp.202-204)
+            case 0x18/*RR B*/ -> state.b(rr(state.b())); // ZUM(pp.208-210)
+            case 0x19/*RR C*/ -> state.c(rr(state.c())); // ZUM(pp.208-210)
+            case 0x1A/*RR D*/ -> state.d(rr(state.d())); // ZUM(pp.208-210)
+            case 0x1B/*RR E*/ -> state.e(rr(state.e())); // ZUM(pp.208-210)
+            case 0x1C/*RR H*/ -> state.h(rr(state.h())); // ZUM(pp.208-210)
+            case 0x1D/*RR L*/ -> state.l(rr(state.l())); // ZUM(pp.208-210)
+            case 0x1E/*RR (HL)*/ -> bus.writeMemory(state.hl(), rr(bus.readMemory(state.hl()))); // ZUM(pp.208-210)
+            case 0x1F/*RR A*/ -> state.a(rr(state.a())); // ZUM(pp.208-210)
+            case 0x20/*SLA B*/ -> state.b(sla(state.b())); // ZUM(pp.211-213)
+            case 0x21/*SLA C*/ -> state.c(sla(state.c())); // ZUM(pp.211-213)
+            case 0x22/*SLA D*/ -> state.d(sla(state.d())); // ZUM(pp.211-213)
+            case 0x23/*SLA E*/ -> state.e(sla(state.e())); // ZUM(pp.211-213)
+            case 0x24/*SLA H*/ -> state.h(sla(state.h())); // ZUM(pp.211-213)
+            case 0x25/*SLA L*/ -> state.l(sla(state.l())); // ZUM(pp.211-213)
+            case 0x26/*SLA (HL)*/ -> bus.writeMemory(state.hl(), sla(bus.readMemory(state.hl()))); // ZUM(pp.211-213)
+            case 0x27/*SLA A*/ -> state.a(sla(state.a())); // ZUM(pp.211-213)
+            case 0x28/*SRA B*/ -> state.b(sra(state.b())); // ZUM(pp.214-216)
+            case 0x29/*SRA C*/ -> state.c(sra(state.c())); // ZUM(pp.214-216)
+            case 0x2A/*SRA D*/ -> state.d(sra(state.d())); // ZUM(pp.214-216)
+            case 0x2B/*SRA E*/ -> state.e(sra(state.e())); // ZUM(pp.214-216)
+            case 0x2C/*SRA H*/ -> state.h(sra(state.h())); // ZUM(pp.214-216)
+            case 0x2D/*SRA L*/ -> state.l(sra(state.l())); // ZUM(pp.214-216)
+            case 0x2E/*SRA (HL)*/ -> bus.writeMemory(state.hl(), sra(bus.readMemory(state.hl()))); // ZUM(pp.214-216)
+            case 0x2F/*SRA A*/ -> state.a(sra(state.a())); // ZUM(pp.214-216)
+            case 0x30/*~SLL B*/ -> state.b(sll(state.b())); // undocumented
+            case 0x31/*~SLL C*/ -> state.c(sll(state.c())); // undocumented
+            case 0x32/*~SLL D*/ -> state.d(sll(state.d())); // undocumented
+            case 0x33/*~SLL E*/ -> state.e(sll(state.e())); // undocumented
+            case 0x34/*~SLL H*/ -> state.h(sll(state.h())); // undocumented
+            case 0x35/*~SLL L*/ -> state.l(sll(state.l())); // undocumented
+            case 0x36/*~SLL (HL)*/ -> bus.writeMemory(state.hl(), sll(bus.readMemory(state.hl()))); // undocumented
+            case 0x37/*~SLL A*/ -> state.a(sll(state.a())); // undocumented
+            case 0x38/*SRL B*/ -> state.b(srl(state.b())); // ZUM(pp.217-219)
+            case 0x39/*SRL C*/ -> state.c(srl(state.c())); // ZUM(pp.217-219)
+            case 0x3A/*SRL D*/ -> state.d(srl(state.d())); // ZUM(pp.217-219)
+            case 0x3B/*SRL E*/ -> state.e(srl(state.e())); // ZUM(pp.217-219)
+            case 0x3C/*SRL H*/ -> state.h(srl(state.h())); // ZUM(pp.217-219)
+            case 0x3D/*SRL L*/ -> state.l(srl(state.l())); // ZUM(pp.217-219)
+            case 0x3E/*SRL (HL)*/ -> bus.writeMemory(state.hl(), srl(bus.readMemory(state.hl()))); // ZUM(pp.217-219)
+            case 0x3F/*SRL A*/ -> state.a(srl(state.a())); // ZUM(pp.217-219)
         }
     }
 
     private void decode_0xCB_40u7F(int opCode) {
-        switch (opCode) {
-            // TODO implementation
+        int y = (opCode & 0x38) >>> 3;
+        int z = (opCode & 0x07);
+        switch (z) {
+            case 0x00/*BIT b,B*/ -> bit(y, state.b()); // ZUM(pp.224-225)
+            case 0x01/*BIT b,C*/ -> bit(y, state.c()); // ZUM(pp.224-225)
+            case 0x02/*BIT b,D*/ -> bit(y, state.d()); // ZUM(pp.224-225)
+            case 0x03/*BIT b,E*/ -> bit(y, state.e()); // ZUM(pp.224-225)
+            case 0x04/*BIT b,H*/ -> bit(y, state.h()); // ZUM(pp.224-225)
+            case 0x05/*BIT b,L*/ -> bit(y, state.l()); // ZUM(pp.224-225)
+            case 0x06/*BIT b,(HL)*/ -> bit(y, bus.readMemory(state.hl())); // ZUM(pp.226-227)
+            case 0x07/*BIT b,A*/ -> bit(y, state.c()); // ZUM(pp.224-225)
         }
     }
 
     private void decode_0xCB_80uBF(int opCode) {
-        switch (opCode) {
-            // TODO implementation
+        int y = (opCode & 0x38) >>> 3;
+        int z = (opCode & 0x07);
+        switch (z) {
+            case 0x00/*RES b,B*/ -> state.b(res(y, state.b())); // ZUM(pp.236-237)
+            case 0x01/*RES b,C*/ -> state.c(res(y, state.c())); // ZUM(pp.236-237)
+            case 0x02/*RES b,D*/ -> state.d(res(y, state.d())); // ZUM(pp.236-237)
+            case 0x03/*RES b,E*/ -> state.e(res(y, state.e())); // ZUM(pp.236-237)
+            case 0x04/*RES b,H*/ -> state.h(res(y, state.h())); // ZUM(pp.236-237)
+            case 0x05/*RES b,L*/ -> state.l(res(y, state.l())); // ZUM(pp.236-237)
+            case 0x06/*RES b,(HL)*/ -> bus.writeMemory(state.hl(), res(y, bus.readMemory(state.hl()))); // ZUM(pp.236-237)
+            case 0x07/*RES b,A*/ -> state.a(res(y, state.c())); // ZUM(pp.236-237)
         }
     }
 
     private void decode_0xCB_C0uFF(int opCode) {
-        switch (opCode) {
-            // TODO implementation
+        int y = (opCode & 0x38) >>> 3;
+        int z = (opCode & 0x07);
+        switch (z) {
+            case 0x00/*SET b,B*/ -> state.b(set(y, state.b())); // ZUM(p.232)
+            case 0x01/*SET b,C*/ -> state.c(set(y, state.c())); // ZUM(p.232)
+            case 0x02/*SET b,D*/ -> state.d(set(y, state.d())); // ZUM(p.232)
+            case 0x03/*SET b,E*/ -> state.e(set(y, state.e())); // ZUM(p.232)
+            case 0x04/*SET b,H*/ -> state.h(set(y, state.h())); // ZUM(p.232)
+            case 0x05/*SET b,L*/ -> state.l(set(y, state.l())); // ZUM(p.232)
+            case 0x06/*SET b,(HL)*/ -> bus.writeMemory(state.hl(), set(y, bus.readMemory(state.hl()))); // ZUM(p.233)
+            case 0x07/*SET b,A*/ -> state.a(set(y, state.c())); // ZUM(p.232)
         }
     }
 
@@ -655,9 +744,9 @@ final class Core {
 
     private void rlca() { // ZUM(p.190)
         boolean bit7 = (state.a() & 0x80) != 0;
-        int rm = (state.a() << 1) & 0xFF;
+        int rm = ((state.a() << 1) | (bit7 ? 1 : 0)) & 0xFF;
         state.cf(bit7);
-        state.a(rm | (bit7 ? 1 : 0));
+        state.a(rm);
     }
 
     private void rla() { // ZUM(p.191)
@@ -669,9 +758,9 @@ final class Core {
 
     private void rrca() { // ZUM(p.192)
         boolean bit0 = (state.a() & 0x1) != 0;
-        int rm = state.a() >>> 1;
+        int rm = (bit0 ? 0x80 : 0) | (state.a() >>> 1);
         state.cf(bit0);
-        state.a(rm | (bit0 ? 0x80 : 0));
+        state.a(rm);
     }
 
     private void rra() { // ZUM(p.193)
@@ -679,6 +768,99 @@ final class Core {
         int rm = (state.cf() ? 0x80 : 0) | (state.a() >>> 1);
         state.cf(bit0);
         state.a(rm);
+    }
+
+    private int rlc(int n) { // ZUM(pp.194-201)
+        boolean bit7 = (n & 0x80) != 0;
+        int rm = ((n << 1) | (bit7 ? 1 : 0)) & 0xFF;
+        state.cf(bit7);
+        //state.pf(...) // TODO update pf
+        state.zf(rm == 0);
+        state.sf((rm & 0x80) != 0);
+        return rm;
+    }
+
+    private int rl(int n) { // ZUM(pp.202-204)
+        boolean bit7 = (n & 0x80) != 0;
+        int rm = ((n << 1) | (state.cf() ? 1 : 0)) & 0xFF;
+        state.cf(bit7);
+        //state.pf(...) // TODO update pf
+        state.zf(rm == 0);
+        state.sf((rm & 0x80) != 0);
+        return rm;
+    }
+
+    private int rrc(int n) { // ZUM(pp.205-207)
+        boolean bit0 = (n & 0x1) != 0;
+        int rm = (bit0 ? 0x80 : 0) | (n >>> 1);
+        state.cf(bit0);
+        //state.pf(...) // TODO update pf
+        state.zf(rm == 0);
+        state.sf((rm & 0x80) != 0);
+        return rm;
+    }
+
+    private int rr(int n) { // ZUM(pp.208-210)
+        boolean bit0 = (n & 0x1) != 0;
+        int rm = (state.cf() ? 0x80 : 0) | (n >>> 1);
+        state.cf(bit0);
+        //state.pf(...) // TODO update pf
+        state.zf(rm == 0);
+        state.sf((rm & 0x80) != 0);
+        return rm;
+    }
+
+    private int sla(int n) { // ZUM(pp.211-213)
+        boolean bit7 = (n & 0x80) != 0;
+        int rm = (n << 1) & 0xFF;
+        state.cf(bit7);
+        //state.pf(...) // TODO update pf
+        state.zf(rm == 0);
+        state.sf((rm & 0x80) != 0);
+        return rm;
+    }
+
+    private int sra(int n) { // ZUM(pp.214-216)
+        boolean bit7 = (n & 0x80) != 0;
+        boolean bit0 = (n & 0x01) != 0;
+        int rm = (bit7 ? 0x80 : 0) | (n >>> 1) & 0xFF;
+        state.cf(bit0);
+        //state.pf(...) // TODO update pf
+        state.zf(rm == 0);
+        state.sf(bit7);
+        return rm;
+    }
+
+    private int sll(int n) { // undocumented
+        boolean bit7 = (n & 0x80) != 0;
+        int rm = ((n << 1) | 0x01) & 0xFF;
+        state.cf(bit7);
+        //state.pf(...) // TODO update pf
+        state.zf(rm == 0);
+        state.sf((rm & 0x80) != 0);
+        return rm;
+    }
+
+    private int srl(int n) { // ZUM(pp.217-219)
+        boolean bit0 = (n & 0x01) != 0;
+        int rm = (n >>> 1) & 0xFF;
+        state.cf(bit0);
+        //state.pf(...) // TODO update pf
+        state.zf(rm == 0);
+        state.sf(false);
+        return rm;
+    }
+
+    private void bit(int b, int n) { // ZUM(pp.224-231)
+        state.zf((n & (1 << b)) == 0);
+    }
+
+    private int set(int b, int n) { // ZUM(pp.232-235)
+        return n | (1 << b);
+    }
+
+    private int res(int b, int n) { // ZUM(pp.236-237)
+        return n & ~(1 << b);
     }
 
     private void jp0() { // ZUM(p.238)
