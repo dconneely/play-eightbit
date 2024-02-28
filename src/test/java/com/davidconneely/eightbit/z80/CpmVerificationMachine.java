@@ -12,6 +12,7 @@ import java.io.IOException;
 final class CpmVerificationMachine {
     /**
      * Load and run the supplied program.
+     *
      * @param program the binary image of the program
      * @return the output of the program.
      */
@@ -39,7 +40,8 @@ final class CpmVerificationMachine {
         switch (func) {
             case 0x02 -> out.append((char) (param & 0xFF));
             case 0x09 -> appendString(bus, param, out);
-            default -> throw new UnsupportedOperationException("CPM BDOS func 0x" + Integer.toHexString(func) + " not implemented");
+            default ->
+                    throw new UnsupportedOperationException("CPM BDOS func 0x" + Integer.toHexString(func) + " not implemented");
         }
     }
 
