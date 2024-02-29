@@ -10,13 +10,15 @@ public class SimpleBus implements IBus {
     }
 
     @Override
+    public int readIoPort(int portNum) {
+        return 0;
+    }
+
+    @Override
     public int readMemory(int address) {
         return memory[address] & 0xFF;
     }
 
-    /**
-     * For saving programs or data from memory.
-     */
     @Override
     public void readMemory(int address, byte[] dest, int offset, int length) {
         checkAddress(address, dest.length, offset, length);
@@ -24,8 +26,8 @@ public class SimpleBus implements IBus {
     }
 
     @Override
-    public int readIoPort(int portNum) {
-        return 0;
+    public void writeIoPort(int portNum, int data) {
+        // do nothing.
     }
 
     @Override
@@ -33,18 +35,10 @@ public class SimpleBus implements IBus {
         memory[address] = (byte) (data & 0xFF);
     }
 
-    /**
-     * For loading programs or data into memory.
-     */
     @Override
     public void writeMemory(int address, byte[] source, int offset, int length) {
         checkAddress(address, source.length, offset, length);
         System.arraycopy(source, offset, memory, address, length);
-    }
-
-    @Override
-    public void writeIoPort(int portNum, int data) {
-        // do nothing.
     }
 
     private void checkAddress(int address, int arrayLen, int offset, int length) {

@@ -28,7 +28,7 @@ final class Core {
         }
     }
 
-    // 0xCB-prefixed opCodes
+    // 0xCB-prefixed opCodes (bit instructions)
     private void decode_0xCB_00uFF(int opCode) {
         int x = opCode & 0xC0;
         switch (x) {
@@ -39,7 +39,7 @@ final class Core {
         }
     }
 
-    // 0xDD-prefixed opCodes
+    // 0xDD-prefixed opCodes (IX instructions)
     private void decode_0xDD_00uFF(int opCode) {
         int x = opCode & 0xC0;
         switch (x) {
@@ -61,7 +61,7 @@ final class Core {
         }
     }
 
-    // 0xFD-prefixed opCodes
+    // 0xFD-prefixed opCodes (IY instructions)
     private void decode_0xFD_00uFF(int opCode) {
         int x = opCode & 0xC0;
         switch (x) {
@@ -74,8 +74,7 @@ final class Core {
 
     private void decode_0x00u3F(int opCode) {
         switch (opCode) {
-            case 0x00/*NOP*/ -> {
-            } // ZUM(p.172)
+            case 0x00/*NOP*/ -> {/*do nothing*/} // ZUM(p.172)
             case 0x01/*LD BC,nn*/ -> state.bc(bus.readWord(state.pcInc2())); // ZUM(p.102)
             case 0x02/*LD (BC),A*/ -> bus.writeMemory(state.bc(), state.a()); // ZUM(p.95)
             case 0x03/*INC BC*/ -> state.bc(inc16(state.bc())); // ZUM(p.184)
