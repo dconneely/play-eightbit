@@ -11,6 +11,10 @@ final class Core {
         this.state = new State();
     }
 
+    State state() {
+        return state;
+    }
+
     void step() {
         if (state.halted()) { // execute an effective NOP
             return;
