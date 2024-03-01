@@ -5,17 +5,8 @@ public class SimpleBus implements IBus {
     private final byte[] memory = new byte[MEMORY_SIZE];
 
     @Override
-    public int readInstruction(int address) {
-        return memory[address] & 0xFF;
-    }
-
-    @Override
-    public int readIoPort(int portNum) {
-        return 0;
-    }
-
-    @Override
     public int readMemory(int address) {
+        checkAddress(address, 1, 0, 1);
         return memory[address] & 0xFF;
     }
 
@@ -26,12 +17,8 @@ public class SimpleBus implements IBus {
     }
 
     @Override
-    public void writeIoPort(int portNum, int data) {
-        // do nothing.
-    }
-
-    @Override
     public void writeMemory(int address, int data) {
+        checkAddress(address, 1, 0, 1);
         memory[address] = (byte) (data & 0xFF);
     }
 

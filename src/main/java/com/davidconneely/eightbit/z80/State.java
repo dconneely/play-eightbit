@@ -2,8 +2,10 @@ package com.davidconneely.eightbit.z80;
 
 public final class State {
     private boolean halted;
-    private int a, b, c, d, e, h, l, w, z, a_, b_, c_, d_, e_, f_, h_, l_, ix, iy, pc, sp;
+    private int a, b, c, d, e, h, l, i, r;
     private boolean cf, nf, pf, yf, hf, xf, zf, sf;
+    private int ix, iy, pc, sp;
+    private int a_, b_, c_, d_, e_, f_, h_, l_;
 
     boolean halted() {
         return halted;
@@ -71,86 +73,20 @@ public final class State {
         l = n & 0xFF;
     }
 
-    int w() {
-        return w;
+    int i() {
+        return i;
     }
 
-    void w(final int n) {
-        w = n & 0xFF;
+    void i(final int n) {
+        i = n & 0xFF;
     }
 
-    int z() {
-        return z;
+    int r() {
+        return r;
     }
 
-    void z(final int n) {
-        z = n & 0xFF;
-    }
-
-    // --- 8-Bit Alternate Registers ---
-
-    int a_() {
-        return a_;
-    }
-
-    void a_(final int n) {
-        a_ = n & 0xFF;
-    }
-
-    int b_() {
-        return b_;
-    }
-
-    void b_(final int n) {
-        b_ = n & 0xFF;
-    }
-
-    int c_() {
-        return c_;
-    }
-
-    void c_(final int n) {
-        c_ = n & 0xFF;
-    }
-
-    int d_() {
-        return d_;
-    }
-
-    void d_(final int n) {
-        d_ = n & 0xFF;
-    }
-
-    int e_() {
-        return e_;
-    }
-
-    void e_(final int n) {
-        e_ = n & 0xFF;
-    }
-
-    int f_() {
-        return f_;
-    }
-
-    void f_(final int n) {
-        f_ = n & 0xFF;
-    }
-
-    int h_() {
-        return h_;
-    }
-
-    void h_(final int n) {
-        h_ = n & 0xFF;
-    }
-
-    int l_() {
-        return l_;
-    }
-
-    void l_(final int n) {
-        l_ = n & 0xFF;
+    void r(final int n) {
+        r = n & 0xFF;
     }
 
     // --- Main Flags ---
@@ -273,53 +209,6 @@ public final class State {
         l = n & 0x00FF;
     }
 
-    int wz() {
-        return (w << 8) | z;
-    }
-
-    void wz(final int n) {
-        w = (n & 0xFF00) >>> 8;
-        z = n & 0x00FF;
-    }
-
-    // --- 16-Bit Alternate Pseudo Registers ---
-
-    int af_() {
-        return (a_ << 8) | f_;
-    }
-
-    void af_(final int n) {
-        a_ = (n & 0xFF00) >>> 8;
-        f_ = (n & 0x00FF);
-    }
-
-    int bc_() {
-        return (b_ << 8) | c_;
-    }
-
-    void bc_(final int n) {
-        b_ = (n & 0xFF00) >>> 8;
-        c_ = n & 0x00FF;
-    }
-
-    int de_() {
-        return (d_ << 8) | e_;
-    }
-
-    void de_(final int n) {
-        d_ = (n & 0xFF00) >>> 8;
-        e_ = n & 0x00FF;
-    }
-
-    int hl_() {
-        return (h_ << 8) | l_;
-    }
-
-    void hl_(final int n) {
-        h_ = (n & 0xFF00) >>> 8;
-        l_ = n & 0x00FF;
-    }
-
     // --- 16-Bit Auxiliary Registers ---
 
     int ix() {
@@ -352,6 +241,22 @@ public final class State {
 
     void sp(final int n) {
         sp = n & 0xFFFF;
+    }
+
+    // --- Alternate Registers ---
+
+    void alt_af() {
+        int t = a; a = a_; a_ = t;
+        t = f(); f(f_); f_ = t;
+    }
+
+    void alt_bcdehl() {
+        int t = b; b = b_; b_ = t;
+        t = c; c = c_; c_ = t;
+        t = d; d = d_; d_ = t;
+        t = e; e = e_; e_ = t;
+        t = h; h = h_; h_ = t;
+        t = l; l = c_; l_ = t;
     }
 
     // --- Utility methods ---

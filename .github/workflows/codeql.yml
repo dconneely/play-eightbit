@@ -6,13 +6,13 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: '16 23 * * 6'
+    - cron: "16 23 * * 6"
 
 jobs:
   analyze:
     name: "Analyze"
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
+    runs-on: "ubuntu-latest"
+    timeout-minutes: 360
 
     permissions:
       security-events: write # required for all workflows
@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'java-kotlin' ] # CodeQL supports [ 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'swift' ] - see https://aka.ms/codeql-docs/language-support
+        language: [ "java-kotlin" ] # CodeQL supports [ 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'swift' ] - see https://aka.ms/codeql-docs/language-support
 
     steps:
     - uses: actions/checkout@v4
@@ -31,10 +31,10 @@ jobs:
         languages: ${{ matrix.language }} # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs; queries: security-extended,security-and-quality
     - uses: actions/setup-java@v4
       with:
-        java-version: '21'
-        distribution: 'temurin'
+        java-version: "21"
+        distribution: "temurin"
         cache: maven
-    - run: ./mvnw -e -B -U -V clean verify
+    - run: "./mvnw -e -B -U -V clean verify"
     - uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"

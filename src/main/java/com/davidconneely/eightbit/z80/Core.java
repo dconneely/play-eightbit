@@ -43,17 +43,6 @@ final class Core {
         }
     }
 
-    // 0xDD-prefixed opCodes (IX instructions)
-    private void decode_0xDD_00uFF(int opCode) {
-        int x = opCode & 0xC0;
-        switch (x) {
-            case 0x00/*0x00-3F*/ -> decode_0xDD_00u3F(opCode);
-            case 0x40/*0x40-7F*/ -> decode_0xDD_40u7F(opCode);
-            case 0x80/*0x80-BF*/ -> decode_0xDD_80uBF(opCode);
-            case 0xC0/*0xC0-FF*/ -> decode_0xDD_C0uFF(opCode);
-        }
-    }
-
     // 0xED-prefixed opCodes
     private void decode_0xED_00uFF(int opCode) {
         int x = opCode & 0xC0;
@@ -62,6 +51,17 @@ final class Core {
             case 0x40/*0x40-7F*/ -> decode_0xED_40u7F(opCode);
             case 0x80/*0x80-BF*/ -> decode_0xED_80uBF(opCode);
             case 0xC0/*0xC0-FF*/ -> decode_0xED_C0uFF(opCode);
+        }
+    }
+
+    // 0xDD-prefixed opCodes (IX instructions)
+    private void decode_0xDD_00uFF(int opCode) {
+        int x = opCode & 0xC0;
+        switch (x) {
+            case 0x00/*0x00-3F*/ -> decode_0xDD_00u3F(opCode);
+            case 0x40/*0x40-7F*/ -> decode_0xDD_40u7F(opCode);
+            case 0x80/*0x80-BF*/ -> decode_0xDD_80uBF(opCode);
+            case 0xC0/*0xC0-FF*/ -> decode_0xDD_C0uFF(opCode);
         }
     }
 
@@ -87,7 +87,7 @@ final class Core {
             case 0x06/*LD B,n*/ -> state.b(bus.readMemory(state.pcInc1())); // ZUM(p.82)
             case 0x07/*RLCA*/ -> rlca(); // ZUM(p.190)
             case 0x08/*EX AF,AF'*/ -> exAfAf_(); // ZUM(p.123)
-            case 0x09/*ADD HL,BC*/ -> state.hl(add16(state.bc())); // ZUM(p.179)
+            case 0x09/*ADD HL,BC*/ -> add16(state.bc()); // ZUM(p.179)
             case 0x0A/*LD A,(BC)*/ -> state.a(bus.readMemory(state.bc())); // ZUM(p.92)
             case 0x0B/*DEC BC*/ -> state.bc(dec16(state.bc())); // ZUM(p.187)
             case 0x0C/*INC C*/ -> state.c(inc8(state.c())); // ZUM(p.160)
@@ -103,7 +103,7 @@ final class Core {
             case 0x16/*LD D,n*/ -> state.d(bus.readMemory(state.pcInc1())); // ZUM(p.82)
             case 0x17/*RLA*/ -> rla(); // ZUM(p.191)
             case 0x18/*JR n*/ -> jr0(); // ZUM(p.241)
-            case 0x19/*ADD HL,DE*/ -> state.hl(add16(state.de())); // ZUM(p.179)
+            case 0x19/*ADD HL,DE*/ -> add16(state.de()); // ZUM(p.179)
             case 0x1A/*LD A,(DE)*/ -> state.a(bus.readMemory(state.de())); // ZUM(p.93)
             case 0x1B/*DEC DE*/ -> state.de(dec16(state.de())); // ZUM(p.187)
             case 0x1C/*INC E*/ -> state.e(inc8(state.e())); // ZUM(p.160)
@@ -119,7 +119,7 @@ final class Core {
             case 0x26/*LD H,n*/ -> state.h(bus.readMemory(state.pcInc1())); // ZUM(p.82)
             case 0x27/*DAA*/ -> daa(); // ZUM(p.166)
             case 0x28/*JR Z,n*/ -> jr1(state.zf()); // ZUM(pp.246-247)
-            case 0x29/*ADD HL,HL*/ -> state.hl(add16(state.hl())); // ZUM(p.179)
+            case 0x29/*ADD HL,HL*/ -> add16(state.hl()); // ZUM(p.179)
             case 0x2A/*LD HL,(nn)*/ -> state.hl(bus.readWord(bus.readWord(state.pcInc2()))); // ZUM(p.105)
             case 0x2B/*DEC HL*/ -> state.hl(dec16(state.hl())); // ZUM(p.187)
             case 0x2C/*INC L*/ -> state.l(inc8(state.l())); // ZUM(p.160)
@@ -135,7 +135,7 @@ final class Core {
             case 0x36/*LD (HL),n*/ -> bus.writeMemory(state.hl(), bus.readMemory(state.pcInc1())); // ZUM(p.86)
             case 0x37/*SCF*/ -> scf(); // ZUM(p.171)
             case 0x38/*JR C,n*/ -> jr1(state.cf()); // ZUM(pp.242-243)
-            case 0x39/*ADD HL,SP*/ -> state.hl(add16(state.sp())); // ZUM(p.179)
+            case 0x39/*ADD HL,SP*/ -> add16(state.sp()); // ZUM(p.179)
             case 0x3A/*LD A,(nn)*/ -> state.a(bus.readMemory(bus.readWord(state.pcInc2()))); // ZUM(p.94)
             case 0x3B/*DEC SP*/ -> state.sp(dec16(state.sp())); // ZUM(p.187)
             case 0x3C/*INC A*/ -> state.a(inc8(state.a())); // ZUM(p.160)
@@ -405,14 +405,6 @@ final class Core {
             case 0x2D/*SRA L*/ -> state.l(sra(state.l())); // ZUM(pp.214-216)
             case 0x2E/*SRA (HL)*/ -> bus.writeMemory(state.hl(), sra(bus.readMemory(state.hl()))); // ZUM(pp.214-216)
             case 0x2F/*SRA A*/ -> state.a(sra(state.a())); // ZUM(pp.214-216)
-            case 0x30/*~SLL B*/ -> state.b(sll(state.b())); // undocumented
-            case 0x31/*~SLL C*/ -> state.c(sll(state.c())); // undocumented
-            case 0x32/*~SLL D*/ -> state.d(sll(state.d())); // undocumented
-            case 0x33/*~SLL E*/ -> state.e(sll(state.e())); // undocumented
-            case 0x34/*~SLL H*/ -> state.h(sll(state.h())); // undocumented
-            case 0x35/*~SLL L*/ -> state.l(sll(state.l())); // undocumented
-            case 0x36/*~SLL (HL)*/ -> bus.writeMemory(state.hl(), sll(bus.readMemory(state.hl()))); // undocumented
-            case 0x37/*~SLL A*/ -> state.a(sll(state.a())); // undocumented
             case 0x38/*SRL B*/ -> state.b(srl(state.b())); // ZUM(pp.217-219)
             case 0x39/*SRL C*/ -> state.c(srl(state.c())); // ZUM(pp.217-219)
             case 0x3A/*SRL D*/ -> state.d(srl(state.d())); // ZUM(pp.217-219)
@@ -469,6 +461,82 @@ final class Core {
         }
     }
 
+    private void decode_0xED_00u3F(int ignoredOpCode) {
+        // do nothing. Z180 opcodes only here.
+    }
+
+    private void decode_0xED_40u7F(int opCode) {
+        switch (opCode) {
+            case 0x40/*IN B,(C)*/ -> state.b(bus.readIoPort(state.bc())); // ZUM(pp.270-271)
+            case 0x41/*OUT (C),B*/ -> bus.writeIoPort(state.bc(), state.b()); // ZUM(pp.280-281)
+            case 0x42/*SBC HL,BC*/ -> sbc16(state.bc()); // ZUM(p.181)
+            case 0x43/*LD (nn),BC*/ -> bus.writeWord(bus.readWord(state.pcInc2()), state.bc()); // ZUM(p.110)
+            case 0x44/*NEG*/ -> neg(); // ZUM(p.169)
+            case 0x45/*RETN*/ -> retn(); // ZUM(pp.265-266)
+            case 0x46/*IM 0*/ -> im0(); // ZUM(p.176)
+            case 0x47/*LD I,A*/ -> {/*TODO ld_i_a();*/} // ZUM(p.100)
+            case 0x48/*IN C,(C)*/ -> state.c(bus.readIoPort(state.bc())); // ZUM(pp.270-271)
+            case 0x49/*OUT (C),C*/ -> bus.writeIoPort(state.bc(), state.c()); // ZUM(pp.280-281)
+            case 0x4A/*ADC HL,BC*/ -> adc16(state.bc()); // ZUM(p.180)
+            case 0x4B/*LD BC,(nn)*/ -> state.bc(bus.readWord(state.pcInc2())); // ZUM(p.106)
+            case 0x4D/*RETI*/ -> reti(); // ZUM(pp.263-264)
+            case 0x4F/*LD R,A*/ -> {/*TODO ld_r_a();*/} // ZUM(p.101)
+            case 0x50/*IN D,(C)*/ -> state.d(bus.readIoPort(state.bc())); // ZUM(pp.270-271)
+            case 0x51/*OUT (C),D*/ -> bus.writeIoPort(state.bc(), state.d()); // ZUM(pp.280-281)
+            case 0x52/*SBC HL,DE*/ -> sbc16(state.de()); // ZUM(p.181)
+            case 0x53/*LD (nn),DE*/ -> bus.writeWord(bus.readWord(state.pcInc2()), state.de()); // ZUM(p.110)
+            case 0x56/*IM 1*/ -> im1(); // ZUM(p.177)
+            case 0x57/*LD A,I*/ -> {/*TODO ld_a_i();*/} // ZUM(p.98)
+            case 0x58/*IN E,(C)*/ -> state.e(bus.readIoPort(state.bc())); // ZUM(pp.270-271)
+            case 0x59/*OUT (C),E*/ -> bus.writeIoPort(state.bc(), state.e()); // ZUM(pp.280-281)
+            case 0x5A/*ADC HL,DE*/ -> adc16(state.de()); // ZUM(p.180)
+            case 0x5B/*LD DE,(nn)*/ -> state.de(bus.readWord(state.pcInc2())); // ZUM(p.106)
+            case 0x5E/*IM 2*/ -> im2(); // ZUM(p.178)
+            case 0x5F/*LD A,R*/ -> {/*TODO ld_a_r();*/} // ZUM(p.99)
+            case 0x60/*IN H,(C)*/ -> state.h(bus.readIoPort(state.bc())); // ZUM(pp.270-271)
+            case 0x61/*OUT (C),H*/ -> bus.writeIoPort(state.bc(), state.h()); // ZUM(pp.280-281)
+            case 0x62/*SBC HL,HL*/ -> sbc16(state.hl()); // ZUM(p.181)
+            case 0x63/*LD (nn),HL*/ -> bus.writeWord(bus.readWord(state.pcInc2()), state.hl()); // ZUM(p.110)
+            case 0x67/*RRD*/ -> rrd(); // ZUM(pp.222-223)
+            case 0x68/*IN L,(C)*/ -> state.l(bus.readIoPort(state.bc())); // ZUM(pp.270-271)
+            case 0x69/*OUT (C),L*/ -> bus.writeIoPort(state.bc(), state.l()); // ZUM(pp.280-281)
+            case 0x6A/*ADC HL,HL*/ -> adc16(state.hl()); // ZUM(p.180)
+            case 0x6B/*LD HL,(nn)*/ -> state.hl(bus.readWord(state.pcInc2())); // ZUM(p.106)
+            case 0x6F/*RLD*/ -> rld(); // ZUM(pp.220-221)
+            case 0x72/*SBC HL,SP*/ -> sbc16(state.sp()); // ZUM(p.181)
+            case 0x73/*LD (nn),SP*/ -> bus.writeWord(bus.readWord(state.pcInc2()), state.sp()); // ZUM(p.110)
+            case 0x78/*IN A,(C)*/ -> state.a(bus.readIoPort(state.bc())); // ZUM(pp.270-271)
+            case 0x79/*OUT (C),A*/ -> bus.writeIoPort(state.bc(), state.a()); // ZUM(pp.280-281)
+            case 0x7A/*ADC HL,SP*/ -> adc16(state.sp()); // ZUM(p.180)
+            case 0x7B/*LD SP,(nn)*/ -> state.sp(bus.readWord(state.pcInc2())); // ZUM(p.106)
+        }
+    }
+
+    private void decode_0xED_80uBF(int opCode) {
+        switch (opCode) {
+            case 0xA0/*LDI*/ -> ldi(); // ZUM(p.128)
+            case 0xA1/*CPI*/ -> cpi(); // ZUM(p.134)
+            case 0xA2/*INI*/ -> ini(); // ZUM(p.272)
+            case 0xA3/*OUTI*/ -> outi(); // ZUM(p.282)
+            case 0xA8/*LDD*/ -> ldd(); // ZUM(p.131)
+            case 0xA9/*CPD*/ -> cpd(); // ZUM(p.137)
+            case 0xAA/*IND*/ -> ind(); // ZUM(pp.275-276)
+            case 0xAB/*OUTD*/ -> outd(); // ZUM(p.285)
+            case 0xB0/*LDIR*/ -> ldir(); // ZUM(pp.129-130)
+            case 0xB1/*CPIR*/ -> cpir(); // ZUM(pp.135-136)
+            case 0xB2/*INIR*/ -> inir(); // ZUM(pp.273-274)
+            case 0xB3/*OTIR*/ -> otir(); // ZUM(pp.283-284)
+            case 0xB8/*LDDR*/ -> lddr(); // ZUM(pp.132-133)
+            case 0xB9/*CPDR*/ -> cpdr(); // ZUM(pp.138-139)
+            case 0xBA/*INDR*/ -> indr(); // ZUM(pp.277-278)
+            case 0xBB/*OTDR*/ -> otdr(); // ZUM(pp.286-287)
+        }
+    }
+
+    private void decode_0xED_C0uFF(int ignoredOpCode) {
+        // do nothing. No opcodes here.
+    }
+
     private void decode_0xDD_00u3F(int opCode) {
         switch (opCode) {
             // TODO implementation
@@ -488,30 +556,6 @@ final class Core {
     }
 
     private void decode_0xDD_C0uFF(int opCode) {
-        switch (opCode) {
-            // TODO implementation
-        }
-    }
-
-    private void decode_0xED_00u3F(int opCode) {
-        switch (opCode) {
-            // TODO implementation
-        }
-    }
-
-    private void decode_0xED_40u7F(int opCode) {
-        switch (opCode) {
-            // TODO implementation
-        }
-    }
-
-    private void decode_0xED_80uBF(int opCode) {
-        switch (opCode) {
-            // TODO implementation
-        }
-    }
-
-    private void decode_0xED_C0uFF(int opCode) {
         switch (opCode) {
             // TODO implementation
         }
@@ -562,27 +606,40 @@ final class Core {
     }
 
     private void exAfAf_() { // ZUM(p.123)
-        int af = state.af();
-        state.af(state.af_());
-        state.af_(af);
+        state.alt_af();
     }
 
     private void exx() { // ZUM(p.124)
-        int bc = state.bc();
-        int de = state.de();
-        int hl = state.hl();
-        state.bc(state.bc_());
-        state.de(state.de_());
-        state.hl(state.hl_());
-        state.bc_(bc);
-        state.de_(de);
-        state.hl_(hl);
+        state.alt_bcdehl();
     }
 
     private void exStkHl() { // ZUM(p.125)
         int hl = state.hl();
         state.hl(bus.readWord(state.sp()));
         bus.writeWord(state.sp(), hl);
+    }
+
+    private void ldi() { // ZUM(p.128)
+    }
+    private void ldir() { // ZUM(pp.129-130)
+    }
+    private void ldd() { // ZUM(p.131)
+        // TODO implementation
+    }
+    private void lddr() { // ZUM(pp.132-133)
+        // TODO implementation
+    }
+    private void cpi() { // ZUM(p.134)
+        // TODO implementation
+    }
+    private void cpir() { // ZUM(pp.135-136)
+        // TODO implementation
+    }
+    private void cpd() { // ZUM(p.137)
+        // TODO implementation
+    }
+    private void cpdr() { // ZUM(pp.138-139)
+        // TODO implementation
     }
 
     private void add8(int n) { // ZUM(pp.140-145)
@@ -709,32 +766,44 @@ final class Core {
         // TODO implementation
     }
 
-    private int add16(int n) { // ZUM(p.179)
+    private void im0() { // ZUM(p.176)
+        // TODO implementation
+    }
+
+    private void im1() { // ZUM(p.177)
+        // TODO implementation
+    }
+
+    private void im2() { // ZUM(p.178)
+        // TODO implementation
+    }
+
+    private void add16(int n) { // ZUM(p.179)
         int ru = state.hl() + n;
         int rm = ru & 0xFFFF;
         state.cf(rm != ru);
         // state.pf(...) // TODO update pf
-        return rm;
+        state.hl(rm);
     }
 
-    private int adc16(int n) { // ZUM(p.180)
+    private void adc16(int n) { // ZUM(p.180)
         int ru = state.hl() + n + (state.cf() ? 1 : 0);
         int rm = ru & 0xFFFF;
         state.cf(rm != ru);
         // state.pf(...) // TODO update pf
         state.zf(rm == 0);
         state.sf((rm & 0x8000) != 0);
-        return rm;
+        state.hl(rm);
     }
 
-    private int sbc16(int n) { // ZUM(p.181)
+    private void sbc16(int n) { // ZUM(p.181)
         int ru = state.hl() - n - (state.cf() ? 1 : 0);
         int rm = ru & 0xFFFF;
         state.cf(rm != ru);
         // state.pf(...) // TODO update pf
         state.zf(rm == 0);
         state.sf((rm & 0x8000) != 0);
-        return rm;
+        state.hl(rm);
     }
 
     private int inc16(int n) { // ZUM(pp.184-186)
@@ -834,16 +903,6 @@ final class Core {
         return rm;
     }
 
-    private int sll(int n) { // undocumented
-        boolean bit7 = (n & 0x80) != 0;
-        int rm = ((n << 1) | 0x01) & 0xFF;
-        state.cf(bit7);
-        //state.pf(...) // TODO update pf
-        state.zf(rm == 0);
-        state.sf((rm & 0x80) != 0);
-        return rm;
-    }
-
     private int srl(int n) { // ZUM(pp.217-219)
         boolean bit0 = (n & 0x01) != 0;
         int rm = (n >>> 1) & 0xFF;
@@ -852,6 +911,14 @@ final class Core {
         state.zf(rm == 0);
         state.sf(false);
         return rm;
+    }
+
+    private void rld() { // ZUM(pp.220-221)
+        // TODO implementation
+    }
+
+    private void rrd() { // ZUM(pp.222-223)
+        // TODO implementation
     }
 
     private void bit(int b, int n) { // ZUM(pp.224-231)
@@ -910,8 +977,41 @@ final class Core {
         if (cond) ret0();
     }
 
+    private void reti() { // ZUM(pp.263-264)
+        // TODO implementation
+    }
+
+    private void retn() { // ZUM(pp.265-266)
+        // TODO implementation
+    }
+
     private void rst(int address) { // ZUM(pp.267-268)
         bus.writeWord(state.spDec2(), state.pc());
         state.pc(address & 0x0038);
+    }
+
+    private void ini() { // ZUM(p.272)
+        // TODO implementation
+    }
+    private void inir() { // ZUM(pp.273-274)
+        // TODO implementation
+    }
+    private void ind() { // ZUM(pp.275-276)
+        // TODO implementation
+    }
+    private void indr() { // ZUM(pp.277-278)
+        // TODO implementation
+    }
+    private void outi() { // ZUM(p.282)
+        // TODO implementation
+    }
+    private void otir() { // ZUM(pp.283-284)
+        // TODO implementation
+    }
+    private void outd() { // ZUM(p.285)
+        // TODO implementation
+    }
+    private void otdr() { // ZUM(pp.286-287)
+        // TODO implementation
     }
 }

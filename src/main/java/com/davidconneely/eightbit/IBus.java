@@ -2,22 +2,35 @@ package com.davidconneely.eightbit;
 
 public interface IBus {
     /**
-     * read from memory during the M1 machine cycle which will be the op code of the next instruction.
+     * Read a byte from memory specifically to decode as the first byte of an instruction. The Z80 CPU has a pinout that
+     * indicates that a read is taking place in the M1 machine cycle. Some hardware (e.g. ZX81) uses this to change the
+     * memory read behaviour for instructions (but not for data) at some addresses.
+     * <p>
+     * Although the 6502 does not have a corresponding way for the hardware to differentiate an instruction read from a
+     * data read, the emulator still uses this method to read the first byte of each instruction. An implementation of
+     * the `IBus` interface for the 6502 should normally rely on the default method provided.
      *
      * @param address 16-bit memory address.
      * @return 8 bits of data (the op code).
      */
-    int readInstruction(int address);
+    default int readInstruction(int address) {
+        return readMemory(address);
+    }
 
     /**
      * Z80 assembly language encourages you to consider only bottom 8 bits, but `IN A, (n)` actually reads from the
-     * 16-bit port number `(A << 8) | n` and `IN B, (C)` actually reads form the 16-bit port number `BC`. Of course,
-     * the hardware is free to ignore the top 8 bits of the address bus, but the Sinclar and Amstrad machines do not.
+     * 16-bit port number `(A << 8) | n` and `IN A, (C)` actually reads form the 16-bit port number `BC`. Of course,
+     * the hardware is free to ignore the top 8 bits of the address bus, but the Sinclair and Amstrad machines do not.
+     * <p>
+     * Conversely, the 6502 CPU does not have separate instructions for accessing specific I/O ports, but maps external
+     * I/O to memory reads and writes at specific addresses (memory-mapped I/O). It will never call this method.
      *
      * @param portNum 16-bit port number (although hardware may only consider some address bits significant).
      * @return the byte read from the specified port.
      */
-    int readIoPort(int portNum);
+    default int readIoPort(int portNum) {
+        return 0;
+    }
 
     /**
      * read from memory of data (i.e. not during the M1 machine cycle of an instruction).
@@ -40,7 +53,9 @@ public interface IBus {
      * @param portNum 16-bit port number (although hardware may only consider some address bits significant).
      * @param data the byte written to the specified port.
      */
-    void writeIoPort(int portNum, int data);
+    default void writeIoPort(int portNum, int data) {
+        /* do nothing. */
+    }
 
     void writeMemory(int address, int data);
 
