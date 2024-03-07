@@ -11,8 +11,8 @@ import java.io.PrintStream;
  * Some of the tests use a simple CPM BDOS call interface to produce test output.
  * This class supports tests that work in that way.
  */
-final class CpmVerificationMachine {
-    static class CpmVerificationBus extends SimpleBus {
+final class CpmVerificationMachine implements AutoCloseable {
+    static class CpmVerificationBus extends SimpleBus implements AutoCloseable {
         private final InputStream in;
         private final PrintStream out;
 
@@ -40,6 +40,15 @@ final class CpmVerificationMachine {
                 out.write((byte) data);
             }
         }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                in.close();
+            } finally {
+                out.close();
+            }
+        }
     }
 
     private boolean terminated;
@@ -48,6 +57,13 @@ final class CpmVerificationMachine {
     CpmVerificationMachine(InputStream in, PrintStream out) {
         this.terminated = false;
         this.bus = new CpmVerificationBus(in, out);
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (bus instanceof AutoCloseable ac) {
+            ac.close();
+        }
     }
 
     void load(int address, final byte[] program) {
