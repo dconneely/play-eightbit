@@ -256,7 +256,7 @@ public final class State {
         t = d; d = d_; d_ = t;
         t = e; e = e_; e_ = t;
         t = h; h = h_; h_ = t;
-        t = l; l = c_; l_ = t;
+        t = l; l = l_; l_ = t;
     }
 
     // --- Utility methods ---

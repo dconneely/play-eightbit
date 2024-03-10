@@ -67,7 +67,20 @@ final class CpmVerificationMachine implements AutoCloseable {
     }
 
     void load(int address, final byte[] program) {
+        bus.writeMemory(0x0000, 0x76); // HALT
+        bus.writeMemory(0x0001, 0x76); // HALT
+        bus.writeMemory(0x0002, 0x76); // HALT
+        bus.writeMemory(0x0003, 0x76); // HALT
+        bus.writeMemory(0x0004, 0x76); // HALT
         bus.writeMemory(0x0005, 0xC9); // BDOS RET
+        bus.writeWord(0x0006, 0xFF00); // high memory (stack)
+        bus.writeMemory(0x0008, 0x76); // HALT
+        bus.writeMemory(0x0009, 0x76); // HALT
+        bus.writeMemory(0x000A, 0x76); // HALT
+        bus.writeMemory(0x000B, 0x76); // HALT
+        bus.writeMemory(0x000C, 0x76); // HALT
+        bus.writeMemory(0xFF00, 0x76); // HALT
+        bus.writeMemory(0xFFFF, 0x76); // HALT
         bus.writeMemory(address, program, 0, program.length);
     }
 
@@ -77,7 +90,8 @@ final class CpmVerificationMachine implements AutoCloseable {
     void run(int address) {
         Core z80 = new Core(bus);
         z80.state().pc(address);
-        while (!terminated) {
+        while (!terminated && !z80.state().halted()) {
+            //System.err.println(z80.state().formatted(bus.readMemory(z80.state().pc())));
             z80.step();
             int pc = z80.state().pc();
             if (pc == 0x0000) { // RST 0
@@ -86,22 +100,35 @@ final class CpmVerificationMachine implements AutoCloseable {
                 cpmBdosCall(bus, z80.state());
             }
         }
+        //System.err.println(z80.state().formatted(bus.readMemory(z80.state().pc())));
+        //System.err.println(formattedStack(bus, z80.state()));
+    }
+
+    private String formattedStack(final IBus bus, final State state) {
+        int sp = state.sp();
+        int[] stackTrace = new int[4];
+        for (int i = sp; i < sp + stackTrace.length * 2 && i <= 0xFFFF; i += 2) {
+            stackTrace[(i - sp) / 2] = bus.readWord(i);
+        }
+        return String.format("stk=0x%04x,0x%04x,0x%04x,0x%04x", stackTrace[0], stackTrace[1], stackTrace[2], stackTrace[3]);
     }
 
     private void cpmBdosCall(final IBus bus, final State state) {
         final int func = state.c();
         switch (func) {
             case 0x00 -> terminated = true;
-            case 0x01 -> {
+            /*case 0x01 -> {
                 int ch = bus.readIoPort(0x0001);
                 state.a(ch);
                 state.l(ch);
-            }
+            }*/
             case 0x02 -> bus.writeIoPort(0x0001, state.e());
             case 0x09 -> writeString(bus, state.de());
-            case 0x10 -> state.de(readString(bus, state.de()));
-            default ->
-                    throw new UnsupportedOperationException("CPM BDOS func 0x" + Integer.toHexString(func) + " not implemented");
+            /*case 0x10 -> state.de(readString(bus, state.de()));*/
+            default -> {
+                System.out.println(state.formatted(bus.readMemory(state.pc())));
+                throw new UnsupportedOperationException("CPM BDOS func 0x" + Integer.toHexString(func) + " not implemented");
+            }
         }
     }
 
