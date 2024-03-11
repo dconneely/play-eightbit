@@ -3,7 +3,7 @@ package com.davidconneely.eightbit.z80;
 public final class State {
     private boolean halted;
     private int a, b, c, d, e, h, l, i, r;
-    private boolean cf, nf, pf, yf, hf, xf, zf, sf;
+    private boolean cf, nf, pf, hf, zf, sf;
     private int ix, iy, pc, sp;
     private int a_, b_, c_, d_, e_, f_, h_, l_;
 
@@ -92,17 +92,15 @@ public final class State {
     // --- Main Flags ---
 
     int f() {
-        return (cf ? 0x01 : 0) | (nf ? 0x02 : 0) | (pf ? 0x04 : 0) | (yf ? 0x08 : 0) |
-                (hf ? 0x10 : 0) | (xf ? 0x20 : 0) | (zf ? 0x40 : 0) | (sf ? 0x80 : 0);
+        return (cf ? 0x01 : 0) | (nf ? 0x02 : 0) | (pf ? 0x04 : 0) |
+                (hf ? 0x10 : 0) | (zf ? 0x40 : 0) | (sf ? 0x80 : 0);
     }
 
     void f(final int n) {
         cf = (n & 0x01) != 0;
         nf = (n & 0x02) != 0;
         pf = (n & 0x04) != 0;
-        yf = (n & 0x08) != 0;
         hf = (n & 0x10) != 0;
-        xf = (n & 0x20) != 0;
         zf = (n & 0x40) != 0;
         sf = (n & 0x80) != 0;
     }
@@ -131,28 +129,12 @@ public final class State {
         pf = n;
     }
 
-    boolean yf() {
-        return yf;
-    }
-
-    void yf(final boolean n) {
-        yf = n;
-    }
-
     boolean hf() {
         return hf;
     }
 
     void hf(final boolean n) {
         hf = n;
-    }
-
-    boolean xf() {
-        return xf;
-    }
-
-    void xf(final boolean n) {
-        xf = n;
     }
 
     boolean zf() {
@@ -296,13 +278,13 @@ public final class State {
         return sp;
     }
 
-    String formatted(final int op) {
+    String formatted(final int opCode) {
         return String.format("pc=0x%04x,sp=0x%04x,op=0x%02x,"
                         + "a=0x%02x,b=0x%02x,c=0x%02x,d=0x%02x,e=0x%02x,h=0x%02x,l=0x%02x,"
                         + "a'=0x%02x,b'=0x%02x,c'=0x%02x,d'=0x%02x,e'=0x%02x,h'=0x%02x,l'=0x%02x,"
                         + "ix=0x%04x,iy=0x%04x,i=0x%02x,r=0x%02x,"
-                        + "c=%d,po=%d,hc=%d,n=%d,z=%d,s=%d,y=%d,x=%d",
-                pc, sp, op, a, b, c, d, e, h, l, a_, b_, c_, d_, e_, h_, l_, ix, iy, 0, 0,
-                cf ? 1 : 0, pf ? 1 : 0, hf ? 1 : 0, nf ? 1 : 0, zf ? 1 : 0, sf ? 1 : 0, yf ? 1 : 0, xf ? 1 : 0);
+                        + "c=%d,po=%d,hc=%d,n=%d,z=%d,s=%d,y=0,x=0",
+                pc, sp, opCode, a, b, c, d, e, h, l, a_, b_, c_, d_, e_, h_, l_, ix, iy, 0, 0,
+                cf ? 1 : 0, pf ? 1 : 0, hf ? 1 : 0, nf ? 1 : 0, zf ? 1 : 0, sf ? 1 : 0);
     }
 }

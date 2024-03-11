@@ -91,17 +91,14 @@ final class CpmVerificationMachine implements AutoCloseable {
         Core z80 = new Core(bus);
         z80.state().pc(address);
         while (!terminated && !z80.state().halted()) {
-            //System.err.println(z80.state().formatted(bus.readMemory(z80.state().pc())));
             z80.step();
             int pc = z80.state().pc();
             if (pc == 0x0000) { // RST 0
-                terminated = true;
-            } else if (pc == 0x0005 && bus.readMemory(pc) == 0xC9) { // CPM BDOS
+                break;
+            } else if (pc == 0x0005) { // CPM BDOS
                 cpmBdosCall(bus, z80.state());
             }
         }
-        //System.err.println(z80.state().formatted(bus.readMemory(z80.state().pc())));
-        //System.err.println(formattedStack(bus, z80.state()));
     }
 
     private String formattedStack(final IBus bus, final State state) {
@@ -110,25 +107,22 @@ final class CpmVerificationMachine implements AutoCloseable {
         for (int i = sp; i < sp + stackTrace.length * 2 && i <= 0xFFFF; i += 2) {
             stackTrace[(i - sp) / 2] = bus.readWord(i);
         }
-        return String.format("stk=0x%04x,0x%04x,0x%04x,0x%04x", stackTrace[0], stackTrace[1], stackTrace[2], stackTrace[3]);
+        return String.format("stack=0x%04x,0x%04x,0x%04x,0x%04x", stackTrace[0], stackTrace[1], stackTrace[2], stackTrace[3]);
     }
 
     private void cpmBdosCall(final IBus bus, final State state) {
         final int func = state.c();
         switch (func) {
             case 0x00 -> terminated = true;
-            /*case 0x01 -> {
+            case 0x01 -> {
                 int ch = bus.readIoPort(0x0001);
                 state.a(ch);
                 state.l(ch);
-            }*/
+            }
             case 0x02 -> bus.writeIoPort(0x0001, state.e());
             case 0x09 -> writeString(bus, state.de());
-            /*case 0x10 -> state.de(readString(bus, state.de()));*/
-            default -> {
-                System.out.println(state.formatted(bus.readMemory(state.pc())));
-                throw new UnsupportedOperationException("CPM BDOS func 0x" + Integer.toHexString(func) + " not implemented");
-            }
+            case 0x10 -> state.de(readString(bus, state.de()));
+            default -> throw new UnsupportedOperationException("CPM BDOS func 0x%02x not implemented".formatted(func));
         }
     }
 
