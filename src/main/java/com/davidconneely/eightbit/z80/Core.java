@@ -208,9 +208,7 @@ final class Core {
         /* `RLC r` ZUM(194-195) HTP(400-401), `RRC r` ZUM(205-207) HTP(413-414), `RL r` ZUM(202-204) HTP(396-397),
            `RR r` ZUM(208-210) HTP(410-411), `SLA r` ZUM(211-213) HTP(428-429), `SRA r` ZUM(214-216) HTP(430-431),
            `SL1 r` undocumented, `SRL r` ZUM(217-219) HTP(432-433) */
-        int val = get_reg(opCode);
-        val = shf_rot(opCode, val);
-        set_reg(opCode, val);
+        set_reg(opCode, shf_rot(opCode, get_reg(opCode)));
     }
 
     private void decode_cb_q1(int opCode) {
@@ -776,8 +774,10 @@ final class Core {
     }
 
     private void ccf() { // ZUM(170) HTP(224)
-        state.cf(!state.cf());
+        boolean cf = state.cf();
+        state.cf(!cf);
         state.nf(false);
+        state.hf(cf);
     }
 
     private void scf() { // ZUM(171) HTP(424)
