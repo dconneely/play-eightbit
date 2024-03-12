@@ -744,8 +744,7 @@ final class Core {
         if (state.cf() || ru > 0x9F || (ru > 0x8F && (ru & 0x0F) > 0x09)) {
             ff |= 0x60;
         }
-        int rm = (state.nf() ? ru - ff : ru + ff) & 0xFF;
-        state.a(rm);
+        int rm = (state.nf() ? (ru - ff) : (ru + ff)) & 0xFF;
         if (ru > 0x99) {
             state.cf(true);
         }
@@ -753,6 +752,7 @@ final class Core {
         state.hf(state.nf() ? (ff & 0x0F) > (ru & 0x0F) : (ru & 0x0F) + (ff & 0xF) >= 0x10);
         state.zf(rm == 0);
         state.sf((rm & 0x80) != 0);
+        state.a(rm);
     }
 
     private void cpl() { // ZUM(168) HTP(235)
@@ -811,6 +811,7 @@ final class Core {
         int rm = ru & 0xFFFF;
         state.cf(rm != ru);
         state.nf(false);
+        state.hf((state.hl() & 0xFFF) + (nn & 0xFFF) >= 0x1000);
         state.hl(rm);
     }
 
@@ -819,6 +820,7 @@ final class Core {
         int rm = ru & 0xFFFF;
         state.cf(rm != ru);
         state.nf(false);
+        state.hf((rrGet.getAsInt() & 0xFFF) + (nn & 0xFFF) >= 0x1000);
         rrSet.accept(rm);
     }
 
