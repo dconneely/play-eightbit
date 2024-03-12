@@ -22,22 +22,22 @@ final class Core {
         if (state.halted()) { // execute an effective NOP
             return;
         }
-        decode_0x00vFF(bus.readInstruction(state.pcInc1()));
+        decode(bus.readInstruction(state.pcInc1()));
     }
 
-    private void decode_0x00vFF(int opCode) {
-        int qtr = (opCode & 0xC0); // values 0x00,40,80,C0
+    private void decode(int opCode) {
+        int qtr = (opCode & 0xC0); // values 0x00|0x40|0x80|0xC0
         switch (qtr) {
-            case 0x00/*[0x00-0x3F]*/ -> decode_0x00v3F(opCode);
-            case 0x40/*[0x40-0x7F]*/ -> decode_0x40v7F(opCode);
-            case 0x80/*[0x80-0xBF]*/ -> decode_0x80vBF(opCode);
-            case 0xC0/*[0xC0-0xFF]*/ -> decode_0xC0vFF(opCode);
+            case 0x00/*[0x00-0x3F]*/ -> decode_q0(opCode);
+            case 0x40/*[0x40-0x7F]*/ -> decode_q1(opCode);
+            case 0x80/*[0x80-0xBF]*/ -> decode_q2(opCode);
+            case 0xC0/*[0xC0-0xFF]*/ -> decode_q3(opCode);
         }
     }
 
-    private void decode_0x00v3F(int opCode) {
+    private void decode_q0(int opCode) {
         switch (opCode) {
-            case 0x00/*NOP*/ -> {/*do nothing*/} // ZUM(172) HTP(359)
+            case 0x00/*NOP*/ -> nop(); // ZUM(172) HTP(359)
             case 0x01/*LD BC,nn*/ -> state.bc(bus.readWord(state.pcInc2())); // ZUM(102) HTP(293-294)
             case 0x02/*LD (BC),A*/ -> bus.writeMemory(state.bc(), state.a()); // ZUM(95) HTP(299)
             case 0x03/*INC BC*/ -> state.bc(inc_nn(state.bc())); // ZUM(184) HTP(265-266)
@@ -104,63 +104,23 @@ final class Core {
         }
     }
 
-    private void decode_0x40v7F(int opCode) {
-        if (opCode == 0x76/*HALT*/) { // ZUM(173) HTP(257)
+    private void decode_q1(int opCode) {
+        if (opCode == 0x76) { /* `HALT` ZUM(173) HTP(257) */
             state.halted(true);
             return;
         }
-        int src = (opCode & 0x07);
-        int dst = (opCode & 0x38) >>> 3;
-        int val = switch (src) {
-            case 0x00/*LD r,B*/ -> state.b(); // ZUM(81) HTP(297-298)
-            case 0x01/*LD r,C*/ -> state.c(); // ZUM(81) HTP(297-298)
-            case 0x02/*LD r,D*/ -> state.d(); // ZUM(81) HTP(297-298)
-            case 0x03/*LD r,E*/ -> state.e(); // ZUM(81) HTP(297-298)
-            case 0x04/*LD r,H*/ -> state.h(); // ZUM(81) HTP(297-298)
-            case 0x05/*LD r,L*/ -> state.l(); // ZUM(81) HTP(297-298)
-            case 0x06/*LD r,(HL)*/ -> bus.readMemory(state.hl()); // ZUM(83) HTP(356-357)
-            case 0x07/*LD r,A*/ -> state.a(); // ZUM(81) HTP(297-298)
-            default -> 0; // unreachable
-        };
-        switch (dst) {
-            case 0x00/*LD B,r*/ -> state.b(val); // ZUM(81) HTP(297-298)
-            case 0x01/*LD C,r*/ -> state.c(val); // ZUM(81) HTP(297-298)
-            case 0x02/*LD D,r*/ -> state.d(val); // ZUM(81) HTP(297-298)
-            case 0x03/*LD E,r*/ -> state.e(val); // ZUM(81) HTP(297-298)
-            case 0x04/*LD H,r*/ -> state.h(val); // ZUM(81) HTP(297-298)
-            case 0x05/*LD L,r*/ -> state.l(val); // ZUM(81) HTP(297-298)
-            case 0x06/*LD (HL),r*/ -> bus.writeMemory(state.hl(), val);// ZUM(86) HTP(303-304)
-            case 0x07/*LD A,r*/ -> state.a(val); // ZUM(81) HTP(297-298)
-        }
+        /* `LD r,r'` ZUM(81) HTP(297-298), `LD r,(HL)` ZUM(83) HTP(356-357), `LD (HL),r` ZUM(86) HTP(303-304) */
+        set_reg((opCode & 0x38) >>> 3, get_reg(opCode));
     }
 
-    private void decode_0x80vBF(int opCode) {
-        int aop = (opCode & 0x38) >>> 3;
-        int reg = (opCode & 0x07);
-        int val = switch (reg) {
-            case 0x00/*aop B*/ -> state.b();
-            case 0x01/*aop C*/ -> state.c();
-            case 0x02/*aop D*/ -> state.d();
-            case 0x03/*aop E*/ -> state.e();
-            case 0x04/*aop H*/ -> state.h();
-            case 0x05/*aop L*/ -> state.l();
-            case 0x06/*aop (HL)*/ -> bus.readMemory(state.hl());
-            case 0x07/*aop A*/ -> state.a();
-            default -> 0; // unreachable
-        };
-        switch (aop) {
-            case 0x00/*ADD A,r*/ -> add_a_n(val); // ZUM(140-141) HTP(201-202)
-            case 0x01/*ADC A,r*/ -> adc_a_n(val); // ZUM(146-147) HTP(190-191)
-            case 0x02/*SUB r*/ -> sub_n(val); // ZUM(148-149) HTP(434-435)
-            case 0x03/*SBC A,r*/ -> sbc_a_n(val); // ZUM(150-151) HTP(420-421)
-            case 0x04/*AND r*/ -> and_n(val); // ZUM(152-153) HTP(209-210)
-            case 0x05/*XOR r*/ -> xor_n(val); // ZUM(156-157) HTP(436-437)
-            case 0x06/*OR r*/ -> or_n(val); // ZUM(154-155) HTP(360-361)
-            case 0x07/*CP r*/ -> cp_n(val); // ZUM(158-159) HTP(225-226)
-        }
+    private void decode_q2(int opCode) {
+        /* `ADD A,r` ZUM(140-141) HTP(201-202), `ADC A,r` ZUM(146-147) HTP(190-191),`SUB r` ZUM(148-149) HTP(434-435),
+           `SBC A,r` ZUM(150-151) HTP(420-421), `AND r` ZUM(152-153) HTP(209-210), `XOR r` ZUM(156-157) HTP(436-437),
+           `OR r` ZUM(154-155) HTP(360-361), `CP r` ZUM(158-159) HTP(225-226) */
+        alu_acc(opCode, get_reg(opCode));
     }
 
-    private void decode_0xC0vFF(int opCode) {
+    private void decode_q3(int opCode) {
         switch (opCode) {
             case 0xC0/*RET NZ*/ -> ret_cc(!state.zf()); // ZUM(261-262) HTP(390-391)
             case 0xC1/*POP BC*/ -> state.bc(bus.readWord(state.spInc2())); // ZUM(119) HTP(373-374)
@@ -173,7 +133,7 @@ final class Core {
             case 0xC8/*RET Z*/ -> ret_cc(state.zf()); // ZUM(261-262) HTP(390-391)
             case 0xC9/*RET*/ -> ret(); // ZUM(260) HTP(388-389)
             case 0xCA/*JP Z,nn*/ -> jp_cc(state.zf()); // ZUM(239-240) HTP(282-283)
-            case 0xCB/*[0xCB],[0x00-0xFF]*/ -> decode_0xCB_0x00uFF(bus.readMemory(state.pcInc1()));
+            case 0xCB/*[0xCB],...*/ -> decode_cb(bus.readMemory(state.pcInc1()));
             case 0xCC/*CALL Z,nn*/ -> call_cc(state.zf()); // ZUM(257-259) HTP(219-221)
             case 0xCD/*CALL nn*/ -> call(); // ZUM(255-256) HTP(222-223)
             case 0xCE/*ADC A,n*/ -> adc_a_n(bus.readMemory(state.pcInc1())); // ZUM(146-147) HTP(190-191)
@@ -191,7 +151,7 @@ final class Core {
             case 0xDA/*JP C,nn*/ -> jp_cc(state.cf()); // ZUM(239-240) HTP(282-283)
             case 0xDB/*IN A,(n)*/ -> state.a(bus.readIoPort((state.a() << 8) | bus.readMemory(state.pcInc1()))); // ZUM(269) HTP(263)
             case 0xDC/*CALL C,nn*/ -> call_cc(state.cf()); // ZUM(257-259) HTP(219-221)
-            case 0xDD/*[0xDD],[0x00-0xFF]*/ -> decode_0xXY_0x00vFF(0xDD, bus.readMemory(state.pcInc1()), state::ix, state::ix);
+            case 0xDD/*[0xDD],...*/ -> decode_xy(0xDD, bus.readMemory(state.pcInc1()), state::ix, state::ix);
             case 0xDE/*SBC A,n*/ -> sbc_a_n(bus.readMemory(state.pcInc1())); // ZUM(150-151) HTP(420-421)
             case 0xDF/*RST 18H*/ -> rst_n(0x18); // ZUM(267-268) HTP(418-419)
             case 0xE0/*RET PO*/ -> ret_cc(!state.pf()); // ZUM(261-262) HTP(390-391)
@@ -207,7 +167,7 @@ final class Core {
             case 0xEA/*JP PE,nn*/ -> jp_cc(state.pf()); // ZUM(239-240) HTP(282-283)
             case 0xEB/*EX DE,HL*/ -> ex_de_hl(); // ZUM(122) HTP(249)
             case 0xEC/*CALL PE,nn*/ -> call_cc(state.pf()); // ZUM(257-259) HTP(219-221)
-            case 0xED/*[0xED],[0x00-0xFF]*/ -> decode_0xED_0x00vFF(bus.readMemory(state.pcInc1()));
+            case 0xED/*[0xED],...*/ -> decode_ed(bus.readMemory(state.pcInc1()));
             case 0xEE/*XOR n*/ -> xor_n(bus.readMemory(state.pcInc1()));
             case 0xEF/*RST 28H*/ -> rst_n(0x28); // ZUM(267-268) HTP(418-419)
             case 0xF0/*RET P*/ -> ret_cc(!state.sf()); // ZUM(261-262) HTP(390-391)
@@ -223,7 +183,7 @@ final class Core {
             case 0xFA/*JP M,nn*/ -> jp_cc(state.sf()); // ZUM(239-240) HTP(282-283)
             case 0xFB/*EI*/ -> ei(); // ZUM(175) HTP(247)
             case 0xFC/*CALL M,nn*/ -> call_cc(state.sf()); // ZUM(257-259) HTP(219-221)
-            case 0xFD/*[0xFD],[0x00-0xFF]*/ -> decode_0xXY_0x00vFF(0xFD, bus.readMemory(state.pcInc1()), state::iy, state::iy);
+            case 0xFD/*[0xFD],...*/ -> decode_xy(0xFD, bus.readMemory(state.pcInc1()), state::iy, state::iy);
             case 0xFE/*CP n*/ -> cp_n(bus.readMemory(state.pcInc1()));
             case 0xFF/*RST 38H*/ -> rst_n(0x38); // ZUM(267-268) HTP(418-419)
         }
@@ -234,96 +194,38 @@ final class Core {
     // -----------------------------------------------------------------------------
 
     // 0xCB-prefixed opCodes (bit instructions)
-    private void decode_0xCB_0x00uFF(int opCode) {
+    private void decode_cb(int opCode) {
         int qtr = opCode & 0xC0;
         switch (qtr) {
-            case 0x00/*[0xCB],[0x00-0x3F]*/ -> decode_0xCB_0x00v3F(opCode);
-            case 0x40/*[0xCB],[0x40-0x7F]*/ -> decode_0xCB_0x40v7F(opCode);
-            case 0x80/*[0xCB],[0x80-0xBF]*/ -> decode_0xCB_0x80vBF(opCode);
-            case 0xC0/*[0xCB],[0xC0-0xFF]*/ -> decode_0xCB_0xC0vFF(opCode);
+            case 0x00/*[0xCB],[0x00-0x3F]*/ -> decode_cb_q0(opCode);
+            case 0x40/*[0xCB],[0x40-0x7F]*/ -> decode_cb_q1(opCode);
+            case 0x80/*[0xCB],[0x80-0xBF]*/ -> decode_cb_q2(opCode);
+            case 0xC0/*[0xCB],[0xC0-0xFF]*/ -> decode_cb_q3(opCode);
         }
     }
 
-    private void decode_0xCB_0x00v3F(int opCode) {
-        int shf = (opCode & 0x38) >>> 3;
-        int reg = (opCode & 0x07);
-        int val = switch (reg) {
-            case 0x00/*shf B*/ -> state.b();
-            case 0x01/*shf C*/ -> state.c();
-            case 0x02/*shf D*/ -> state.d();
-            case 0x03/*shf E*/ -> state.e();
-            case 0x04/*shf H*/ -> state.h();
-            case 0x05/*shf L*/ -> state.l();
-            case 0x06/*shf (HL)*/ -> bus.readMemory(state.hl());
-            case 0x07/*shf A*/ -> state.a();
-            default -> 0; // unreachable
-        };
-        val = switch (shf) {
-            case 0x00/*RLC r*/ -> rlc_n(val); // ZUM(194-195) HTP(400-401)
-            case 0x01/*RRC r*/ -> rrc_n(val); // ZUM(205-207) HTP(413-414)
-            case 0x02/*RL r*/ -> rl_n(val); // ZUM(202-204) HTP(396-397)
-            case 0x03/*RR r*/ -> rr_n(val); // ZUM(208-210) HTP(410-411)
-            case 0x04/*SLA r*/ -> sla_n(val); // ZUM(211-213) HTP(428-429)
-            case 0x05/*SRA r*/ -> sra_n(val); // ZUM(214-216) HTP(430-431)
-            case 0x06/*SL1 r*/ -> sl1_n(val); // undocumented
-            case 0x07/*SRL r*/ -> srl_n(val); // ZUM(217-219) HTP(432-433)
-            default -> 0; // unreachable
-        };
-        switch (reg) {
-            case 0x00/*shf B*/ -> state.b(val);
-            case 0x01/*shf C*/ -> state.c(val);
-            case 0x02/*shf D*/ -> state.d(val);
-            case 0x03/*shf E*/ -> state.e(val);
-            case 0x04/*shf H*/ -> state.h(val);
-            case 0x05/*shf L*/ -> state.l(val);
-            case 0x06/*shf (HL)*/ -> bus.writeMemory(state.hl(), val);
-            case 0x07/*shf A*/ -> state.a(val);
-        }
+    private void decode_cb_q0(int opCode) {
+        /* `RLC r` ZUM(194-195) HTP(400-401), `RRC r` ZUM(205-207) HTP(413-414), `RL r` ZUM(202-204) HTP(396-397),
+           `RR r` ZUM(208-210) HTP(410-411), `SLA r` ZUM(211-213) HTP(428-429), `SRA r` ZUM(214-216) HTP(430-431),
+           `SL1 r` undocumented, `SRL r` ZUM(217-219) HTP(432-433) */
+        int val = get_reg(opCode);
+        val = shf_rot(opCode, val);
+        set_reg(opCode, val);
     }
 
-    private void decode_0xCB_0x40v7F(int opCode) {
-        int bit = (opCode & 0x38) >>> 3;
-        int reg = (opCode & 0x07);
-        switch (reg) {
-            case 0x00/*BIT b,B*/ -> bit_b_n(bit, state.b()); // ZUM(224-225) HTP(217-218)
-            case 0x01/*BIT b,C*/ -> bit_b_n(bit, state.c()); // ZUM(224-225) HTP(217-218)
-            case 0x02/*BIT b,D*/ -> bit_b_n(bit, state.d()); // ZUM(224-225) HTP(217-218)
-            case 0x03/*BIT b,E*/ -> bit_b_n(bit, state.e()); // ZUM(224-225) HTP(217-218)
-            case 0x04/*BIT b,H*/ -> bit_b_n(bit, state.h()); // ZUM(224-225) HTP(217-218)
-            case 0x05/*BIT b,L*/ -> bit_b_n(bit, state.l()); // ZUM(224-225) HTP(217-218)
-            case 0x06/*BIT b,(HL)*/ -> bit_b_n(bit, bus.readMemory(state.hl())); // ZUM(226-227) HTP(211-212)
-            case 0x07/*BIT b,A*/ -> bit_b_n(bit, state.a()); // ZUM(224-225) HTP(217-218)
-        }
+    private void decode_cb_q1(int opCode) {
+        /* `BIT b,r` ZUM(224-225) HTP(217-218), `BIT b,(HL)` ZUM(226-227) HTP(211-212) */
+        bit_b_n((opCode & 0x38) >>> 3, get_reg(opCode));
     }
 
-    private void decode_0xCB_0x80vBF(int opCode) {
-        int bit = (opCode & 0x38) >>> 3;
-        int reg = (opCode & 0x07);
-        switch (reg) {
-            case 0x00/*RES b,B*/ -> state.b(res_b_n(bit, state.b())); // ZUM(236-237) HTP(385-387)
-            case 0x01/*RES b,C*/ -> state.c(res_b_n(bit, state.c())); // ZUM(236-237) HTP(385-387)
-            case 0x02/*RES b,D*/ -> state.d(res_b_n(bit, state.d())); // ZUM(236-237) HTP(385-387)
-            case 0x03/*RES b,E*/ -> state.e(res_b_n(bit, state.e())); // ZUM(236-237) HTP(385-387)
-            case 0x04/*RES b,H*/ -> state.h(res_b_n(bit, state.h())); // ZUM(236-237) HTP(385-387)
-            case 0x05/*RES b,L*/ -> state.l(res_b_n(bit, state.l())); // ZUM(236-237) HTP(385-387)
-            case 0x06/*RES b,(HL)*/ -> bus.writeMemory(state.hl(), res_b_n(bit, bus.readMemory(state.hl()))); // ZUM(236-237) HTP(385-387)
-            case 0x07/*RES b,A*/ -> state.a(res_b_n(bit, state.a())); // ZUM(236-237) HTP(385-387)
-        }
+    private void decode_cb_q2(int opCode) {
+        /* `RES b,r` ZUM(236-237) HTP(385-387) */
+        set_reg(opCode, res_b_n((opCode & 0x38) >>> 3, get_reg(opCode)));
     }
 
-    private void decode_0xCB_0xC0vFF(int opCode) {
-        int bit = (opCode & 0x38) >>> 3;
-        int reg = (opCode & 0x07);
-        switch (reg) {
-            case 0x00/*SET b,B*/ -> state.b(set_b_n(bit, state.b())); // ZUM(232) HTP(425-427)
-            case 0x01/*SET b,C*/ -> state.c(set_b_n(bit, state.c())); // ZUM(232) HTP(425-427)
-            case 0x02/*SET b,D*/ -> state.d(set_b_n(bit, state.d())); // ZUM(232) HTP(425-427)
-            case 0x03/*SET b,E*/ -> state.e(set_b_n(bit, state.e())); // ZUM(232) HTP(425-427)
-            case 0x04/*SET b,H*/ -> state.h(set_b_n(bit, state.h())); // ZUM(232) HTP(425-427)
-            case 0x05/*SET b,L*/ -> state.l(set_b_n(bit, state.l())); // ZUM(232) HTP(425-427)
-            case 0x06/*SET b,(HL)*/ -> bus.writeMemory(state.hl(), set_b_n(bit, bus.readMemory(state.hl()))); // ZUM(233) HTP(425-427)
-            case 0x07/*SET b,A*/ -> state.a(set_b_n(bit, state.a())); // ZUM(232) HTP(425-427)
-        }
+    private void decode_cb_q3(int opCode) {
+        /* `SET b,r` ZUM(232) HTP(425-427), `SET b,(HL)` ZUM(233) HTP(425-427) */
+        set_reg(opCode, set_b_n((opCode & 0x38) >>> 3, get_reg(opCode)));
     }
 
     // -----------------------------------------------------------------------------------------------
@@ -331,17 +233,17 @@ final class Core {
     // -----------------------------------------------------------------------------------------------
 
     // 0xED-prefixed opCodes
-    private void decode_0xED_0x00vFF(int opCode) {
+    private void decode_ed(int opCode) {
         int qtr = opCode & 0xC0;
         switch (qtr) {
-            case 0x00/*[0xED],[0x00-0x3F]*/ -> unrecognizedOpCode2(0xED, opCode);
-            case 0x40/*[0xED],[0x40-0x7F]*/ -> decode_0xED_0x40v7F(opCode);
-            case 0x80/*[0xED],[0x80-0xBF]*/ -> decode_0xED_0x80vBF(opCode);
-            case 0xC0/*[0xED],[0xC0-0xFF]*/ -> unrecognizedOpCode2(0xED, opCode);
+            case 0x00/*[0xED],[0x00-0x3F]*/ -> nop(0xED, opCode);
+            case 0x40/*[0xED],[0x40-0x7F]*/ -> decode_ed_q1(opCode);
+            case 0x80/*[0xED],[0x80-0xBF]*/ -> decode_ed_q2(opCode);
+            case 0xC0/*[0xED],[0xC0-0xFF]*/ -> nop(0xED, opCode);
         }
     }
 
-    private void decode_0xED_0x40v7F(int opCode) {
+    private void decode_ed_q1(int opCode) {
         switch (opCode) {
             case 0x40/*IN B,(C)*/ -> state.b(bus.readIoPort(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x41/*OUT (C),B*/ -> bus.writeIoPort(state.bc(), state.b()); // ZUM(280-281) HTP(366-367)
@@ -355,41 +257,61 @@ final class Core {
             case 0x49/*OUT (C),C*/ -> bus.writeIoPort(state.bc(), state.c()); // ZUM(280-281) HTP(366-367)
             case 0x4A/*ADC HL,BC*/ -> adc_hl_nn(state.bc()); // ZUM(180) HTP(192-193)
             case 0x4B/*LD BC,(nn)*/ -> state.bc(bus.readWord(bus.readWord(state.pcInc2()))); // ZUM(106) HTP(291-292)
+            case 0x4C/*NEG'*/ -> neg(); // undocumented
             case 0x4D/*RETI*/ -> reti(); // ZUM(263-264) HTP(392-393)
+            case 0x4E/*IM' 0*/ -> im0(); // undocumented
             case 0x4F/*LD R,A*/ -> ld_r_a(); // ZUM(101) HTP(344)
             case 0x50/*IN D,(C)*/ -> state.d(bus.readIoPort(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x51/*OUT (C),D*/ -> bus.writeIoPort(state.bc(), state.d()); // ZUM(280-281) HTP(366-367)
             case 0x52/*SBC HL,DE*/ -> sbc_hl_nn(state.de()); // ZUM(181) HTP(422-423)
             case 0x53/*LD (nn),DE*/ -> bus.writeWord(bus.readWord(state.pcInc2()), state.de()); // ZUM(110) HTP(321-322)
+            case 0x54/*NEG'*/ -> neg(); // undocumented
+            case 0x55/*RETN'*/ -> retn(); // undocumented
             case 0x56/*IM 1*/ -> im1(); // ZUM(177) HTP(259)
             case 0x57/*LD A,I*/ -> ld_a_i(); // ZUM(98) HTP(331)
             case 0x58/*IN E,(C)*/ -> state.e(bus.readIoPort(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x59/*OUT (C),E*/ -> bus.writeIoPort(state.bc(), state.e()); // ZUM(280-281) HTP(366-367)
             case 0x5A/*ADC HL,DE*/ -> adc_hl_nn(state.de()); // ZUM(180) HTP(192-193)
             case 0x5B/*LD DE,(nn)*/ -> state.de(bus.readWord(bus.readWord(state.pcInc2()))); // ZUM(106) HTP(291-292)
+            case 0x5C/*NEG'*/ -> neg(); // undocumented
+            case 0x5D/*RETN'*/ -> retn(); // undocumented
             case 0x5E/*IM 2*/ -> im2(); // ZUM(178) HTP(260)
             case 0x5F/*LD A,R*/ -> ld_a_r(); // ZUM(99) HTP(333)
             case 0x60/*IN H,(C)*/ -> state.h(bus.readIoPort(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x61/*OUT (C),H*/ -> bus.writeIoPort(state.bc(), state.h()); // ZUM(280-281) HTP(366-367)
             case 0x62/*SBC HL,HL*/ -> sbc_hl_nn(state.hl()); // ZUM(181) HTP(422-423)
-            case 0x63/*LD (nn),HL*/ -> bus.writeWord(bus.readWord(state.pcInc2()), state.hl()); // ZUM(110) HTP(321-322)
+            case 0x63/*LD' (nn),HL*/ -> bus.writeWord(bus.readWord(state.pcInc2()), state.hl()); // ZUM(110) HTP(321-322)
+            case 0x64/*NEG'*/ -> neg(); // undocumented
+            case 0x65/*RETN'*/ -> retn(); // undocumented
+            case 0x66/*IM' 1*/ -> im1(); // undocumented
             case 0x67/*RRD*/ -> rrd(); // ZUM(222-223) HTP(416-417)
             case 0x68/*IN L,(C)*/ -> state.l(bus.readIoPort(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x69/*OUT (C),L*/ -> bus.writeIoPort(state.bc(), state.l()); // ZUM(280-281) HTP(366-367)
             case 0x6A/*ADC HL,HL*/ -> adc_hl_nn(state.hl()); // ZUM(180) HTP(192-193)
-            case 0x6B/*LD HL,(nn)*/ -> state.hl(bus.readWord(state.pcInc2())); // ZUM(106) HTP(291-292)
+            case 0x6B/*LD' HL,(nn)*/ -> state.hl(bus.readWord(state.pcInc2())); // ZUM(106) HTP(291-292)
+            case 0x6C/*NEG'*/ -> neg(); // undocumented
+            case 0x6D/*RETN'*/ -> retn(); // undocumented
+            case 0x6E/*IM' 1*/ -> im1(); // undocumented
             case 0x6F/*RLD*/ -> rld(); // ZUM(220-221) HTP(408-409)
+            case 0x70/*IN' (C)*/ -> bus.readIoPort(state.bc()); // undocumented
+            case 0x71/*OUT' (C)-*/ -> bus.writeIoPort(state.bc(), 0); // undocumented
             case 0x72/*SBC HL,SP*/ -> sbc_hl_nn(state.sp()); // ZUM(181) HTP(422-423)
             case 0x73/*LD (nn),SP*/ -> bus.writeWord(bus.readWord(state.pcInc2()), state.sp()); // ZUM(110) HTP(321-322)
+            case 0x74/*NEG'*/ -> neg(); // undocumented
+            case 0x75/*RETN'*/ -> retn(); // undocumented
+            case 0x76/*IM' 1*/ -> im1(); // undocumented
             case 0x78/*IN A,(C)*/ -> state.a(bus.readIoPort(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x79/*OUT (C),A*/ -> bus.writeIoPort(state.bc(), state.a()); // ZUM(280-281) HTP(366-367)
             case 0x7A/*ADC HL,SP*/ -> adc_hl_nn(state.sp()); // ZUM(180) HTP(192-193)
             case 0x7B/*LD SP,(nn)*/ -> state.sp(bus.readWord(bus.readWord(state.pcInc2()))); // ZUM(106) HTP(291-292)
-            default -> unrecognizedOpCode2(0xED, opCode);
+            case 0x7C/*NEG'*/ -> neg(); // undocumented
+            case 0x7D/*RETN'*/ -> retn(); // undocumented
+            case 0x7E/*IM' 2*/ -> im2(); // undocumented
+            default -> nop(0xED, opCode); // e.g. [0xED],[0x77] and [0xED],[0x7F]
         }
     }
 
-    private void decode_0xED_0x80vBF(int opCode) {
+    private void decode_ed_q2(int opCode) {
         switch (opCode) {
             case 0xA0/*LDI*/ -> ldi(); // ZUM(128) HTP(352-353)
             case 0xA1/*CPI*/ -> cpi(); // ZUM(134) HTP(231-232)
@@ -407,7 +329,7 @@ final class Core {
             case 0xB9/*CPDR*/ -> cpdr(); // ZUM(138-139) HTP(229-230)
             case 0xBA/*INDR*/ -> indr(); // ZUM(277-278) HTP(276-277)
             case 0xBB/*OTDR*/ -> otdr(); // ZUM(286-287) HTP(362-363)
-            default -> unrecognizedOpCode2(0xED, opCode);
+            default -> nop(0xED, opCode); // e.g. 0xED,0x80-0x9F
         }
     }
 
@@ -416,17 +338,17 @@ final class Core {
     // --------------------------------------------------------------------------------------------------
 
     // 0xDD (IX) or 0xFD (IY) prefixed op-codes
-    private void decode_0xXY_0x00vFF(int prefix1, int opCode, IntSupplier rrGet, IntConsumer rrSet) {
+    private void decode_xy(int prefix1, int opCode, IntSupplier rrGet, IntConsumer rrSet) {
         int qtr = opCode & 0xC0;
         switch (qtr) {
-            case 0x00/*[0xXY].[0x00-0x3F]*/ -> decode_0xXY_0x00v3F(prefix1, opCode, rrGet, rrSet);
-            case 0x40/*[0xXY],[0x40-0x7F]*/ -> decode_0xXY_0x40v7F(prefix1, opCode, rrGet, rrSet);
-            case 0x80/*[0xXY],[0x80-0xBF]*/ -> decode_0xXY_0x80vBF(opCode, rrGet);
-            case 0xC0/*[0xXY],[0xC0-0xFF]*/ -> decode_0xXY_0xC0vFF(prefix1, opCode, rrGet, rrSet);
+            case 0x00/*[0xDD|0xFD].[0x00-0x3F]*/ -> decode_xy_q0(prefix1, opCode, rrGet, rrSet);
+            case 0x40/*[0xDD|0xFD],[0x40-0x7F]*/ -> decode_xy_q1(prefix1, opCode, rrGet, rrSet);
+            case 0x80/*[0xDD|0xFD],[0x80-0xBF]*/ -> decode_xy_q2(opCode, rrGet);
+            case 0xC0/*[0xDD|0xFD],[0xC0-0xFF]*/ -> decode_xy_q3(prefix1, opCode, rrGet, rrSet);
         }
     }
 
-    private void decode_0xXY_0x00v3F(int prefix1, int opCode, IntSupplier rrGet, IntConsumer rrSet) {
+    private void decode_xy_q0(int prefix1, int opCode, IntSupplier rrGet, IntConsumer rrSet) {
         switch (opCode) {
             case 0x04/*INC B*/ -> state.b(inc_n(state.b())); // undocumented
             case 0x05/*DEC B*/ -> state.b(dec_n(state.b())); // undocumented
@@ -470,13 +392,13 @@ final class Core {
             case 0x3C/*INC A*/ -> state.a(inc_n(state.a())); // undocumented
             case 0x3D/*DEC A*/ -> state.a(dec_n(state.a())); // undocumented
             case 0x3E/*LD A,n*/ -> state.a(bus.readMemory(state.pcInc1())); // undocumented
-            default -> unrecognizedOpCode2(prefix1, opCode);
+            default -> nop(prefix1, opCode);
         }
     }
 
-    private void decode_0xXY_0x40v7F(int prefix1, int opCode, IntSupplier rrGet, IntConsumer rrSet) {
+    private void decode_xy_q1(int prefix1, int opCode, IntSupplier rrGet, IntConsumer rrSet) {
         if (opCode == 0x76) { // not a valid op-code
-            unrecognizedOpCode2(prefix1, opCode);
+            nop(prefix1, opCode);
             return;
         }
         int src = (opCode & 0x07);
@@ -508,43 +430,36 @@ final class Core {
         }
     }
 
-    private void decode_0xXY_0x80vBF(int opCode, IntSupplier rrGet) {
-        int aop = (opCode & 0x38) >>> 3;
-        int reg = (opCode & 0x07);
-        int val = switch (reg) {
+    private void decode_xy_q2(int opCode, IntSupplier rrGet) {
+        /* `ADD A,r` ZUM(144-145) HTP(196-199), `ADC A,r` ZUM(146-147) HTP(190-191), `SUB r` ZUM(148-149) HTP(434-435),
+           `SBC A,r` ZUM(150-151) HTP(420-421), `AND r` ZUM(152-153) HTP(209-210), `XOR r` ZUM(156-157) HTP(436-437),
+           `OR r` ZUM(154-155) HTP(360-361), `CP r` ZUM(158-159) HTP(225-226), `(IXY+n)` ZUM(144-145) HTP(196-199) */
+        int val = switch (opCode & 0x07) {
             case 0x00/*aop B*/ -> state.b();
             case 0x01/*aop C*/ -> state.c();
             case 0x02/*aop D*/ -> state.d();
             case 0x03/*aop E*/ -> state.e();
             case 0x04/*aop IXYH*/ -> high(rrGet);
             case 0x05/*aop IXYL*/ -> low(rrGet);
-            case 0x06/*aop (IXY)*/ -> bus.readMemory(indexed(rrGet.getAsInt())); // ZUM(144-145) HTP(196-199)
+            case 0x06/*aop (IXY)*/ -> bus.readMemory(indexed(rrGet.getAsInt())); //
             case 0x07/*aop A*/ -> state.a();
             default -> 0; // unreachable
         };
-        switch (aop) {
-            case 0x00/*ADD A,r*/ -> add_a_n(val); // ZUM(144-145) HTP(196-199)
-            case 0x01/*ADC A,r*/ -> adc_a_n(val); // ZUM(146-147) HTP(190-191)
-            case 0x02/*SUB r*/ -> sub_n(val); // ZUM(148-149) HTP(434-435)
-            case 0x03/*SBC A,r*/ -> sbc_a_n(val); // ZUM(150-151) HTP(420-421)
-            case 0x04/*AND r*/ -> and_n(val); // ZUM(152-153) HTP(209-210)
-            case 0x05/*XOR r*/ -> xor_n(val); // ZUM(156-157) HTP(436-437)
-            case 0x06/*OR r*/ -> or_n(val); // ZUM(154-155) HTP(360-361)
-            case 0x07/*CP r*/ -> cp_n(val); // ZUM(158-159) HTP(225-226)
-        }
+        alu_acc(opCode, val);
     }
 
-    private void decode_0xXY_0xC0vFF(int prefix1, int opCode, IntSupplier rrGet, IntConsumer rrSet) {
+    private void decode_xy_q3(int prefix1, int opCode, IntSupplier rrGet, IntConsumer rrSet) {
         switch (opCode) {
-            case 0xCB/*[0xXY],[0xCB],[0x00-0xFF]*/ -> decode_0xXY_0xCB_0x00vFF(indexed(rrGet.getAsInt()));
-            case 0xDD/*[0xXY],[0xDD],[0x00-0xFF]*/ -> decode_0xXY_0x00vFF(0xDD, bus.readMemory(state.pcInc1()), state::ix, state::ix);
+            case 0xCB/*[0xDD|0xFD],[0xCB],...*/ -> decode_xy_cb(indexed(rrGet.getAsInt()));
+            case 0xDD/*[0xDD|0xFD],[0xDD],...*/ -> decode_xy(0xDD, bus.readMemory(state.pcInc1()), state::ix, state::ix);
             case 0xE1/*POP IXY*/ -> rrSet.accept(bus.readWord(state.spInc2())); // ZUM(120) HTP(375-376)
+            case 0xED/*[0xDD|0xFD],[0xED],...*/ -> decode_ed(bus.readMemory(state.pcInc1()));
             case 0xE3/*EX (SP),IXY*/ -> ex_csp_rr(rrGet, rrSet); // ZUM(126-127) HTP(252-255)
             case 0xE5/*PUSH IXY*/ -> bus.writeWord(state.spDec2(), rrGet.getAsInt()); // ZUM(117) HTP(381-382)
             case 0xE9/*JP (IXY)*/ -> state.pc(rrGet.getAsInt()); // ZUM(251) HTP(286)
             case 0xF9/*LD SP,IXY*/ -> state.sp(rrGet.getAsInt()); // ZUM(114-115) HTP(346-347)
-            case 0xFD/*[0xXY],[0xFD],[0x00-0xFF]*/ -> decode_0xXY_0x00vFF(0xFD, bus.readMemory(state.pcInc1()), state::iy, state::iy);
-            default -> unrecognizedOpCode2(prefix1, opCode);
+            case 0xFD/*[0xDD|0xFD],[0xFD],...*/ -> decode_xy(0xFD, bus.readMemory(state.pcInc1()), state::iy, state::iy);
+            default -> nop(prefix1, opCode);
         }
     }
 
@@ -553,97 +468,68 @@ final class Core {
     // ------------------------------------------------------------------------------------------------------
 
     // 0xDD,0xCB or 0xFD,0xCB prefixed op-codes (indexed bit instructions)
-    private void decode_0xXY_0xCB_0x00vFF(int address) {
+    private void decode_xy_cb(int address) {
         int opCode = bus.readMemory(state().pcInc1());
         int qtr = opCode & 0xC0;
         switch (qtr) {
-            case 0x00/*[0xXY],[0xCB],[0x00-0x3F]*/ -> decode_0xXY_0xCB_0x00v3F(opCode, address);
-            case 0x40/*[0xXY],[0xCB],[0x40-0x7F]*/ -> decode_0xXY_0xCB_0x40v7F(opCode, address);
-            case 0x80/*[0xXY],[0xCB],[0x80-0xBF]*/ -> decode_0xXY_0xCB_0x80vBF(opCode, address);
-            case 0xC0/*[0xXY],[0xCB],[0xC0-0xFF]*/ -> decode_0xXY_0xCB_0xC0vFF(opCode, address);
+            case 0x00/*[0xDD|0xFD],[0xCB],[0x00-0x3F]*/ -> decode_xy_cb_q0(opCode, address);
+            case 0x40/*[0xDD|0xFD],[0xCB],[0x40-0x7F]*/ -> decode_xy_cb_q1(opCode, address);
+            case 0x80/*[0xDD|0xFD],[0xCB],[0x80-0xBF]*/ -> decode_xy_cb_q2(opCode, address);
+            case 0xC0/*[0xDD|0xFD],[0xCB],[0xC0-0xFF]*/ -> decode_xy_cb_q3(opCode, address);
         }
     }
 
-    private void decode_0xXY_0xCB_0x00v3F(int opCode, int address) {
-        int shf = (opCode & 0x38) >>> 3;
-        int reg = (opCode & 0x07);
-        int val = bus.readMemory(address);
-        val = switch (shf) {
-            case 0x00/*RLC (IXY+n),r*/ -> rlc_n(val); // ZUM(198-201) HTP(404-407)
-            case 0x01/*RRC (IXY+n),r*/ -> rrc_n(val); // ZUM(205-207) HTP(413-414)
-            case 0x02/*RL (IXY+n),r*/ -> rl_n(val); // ZUM(202-204) HTP(396-397)
-            case 0x03/*RR (IXY+n),r*/ -> rr_n(val); // ZUM(208-210) HTP(410-411)
-            case 0x04/*SLA (IXY+n),r*/ -> sla_n(val); // ZUM(211-213) HTP(428-429)
-            case 0x05/*SRA (IXY+n),r*/ -> sra_n(val); // ZUM(214-216) HTP(430-431)
-            case 0x06/*SL1 (IXY+n),r*/ -> sl1_n(val); // undocumented
-            case 0x07/*SRL (IXY+n),r*/ -> srl_n(val); // ZUM(217-219) HTP(432-433)
-            default -> 0; // unreachable
-        };
+    private void decode_xy_cb_q0(int opCode, int address) {
+        /* `RLC (IXY+n),r` ZUM(198-201) HTP(404-407), `RRC (IXY+n),r` ZUM(205-207) HTP(413-414),
+           `RL (IXY+n),r` ZUM(202-204) HTP(396-397), `RR (IXY+n),r` ZUM(208-210) HTP(410-411),
+           `SLA (IXY+n),r` ZUM(211-213) HTP(428-429), `SRA (IXY+n),r` ZUM(214-216) HTP(430-431),
+           `SL1 (IXY+n),r` undocumented, SRL (IXY+n),r` ZUM(217-219) HTP(432-433) */
+        int val = shf_rot(opCode, bus.readMemory(address));
         bus.writeMemory(address, val);
-        switch (reg) {
-            case 0x00/*shf (IXY+n),B*/ -> state.b(val); // undocumented
-            case 0x01/*shf (IXY+n),C*/ -> state.c(val); // undocumented
-            case 0x02/*shf (IXY+n),D*/ -> state.d(val); // undocumented
-            case 0x03/*shf (IXY+n),E*/ -> state.e(val); // undocumented
-            case 0x04/*shf (IXY+n),H*/ -> state.h(val); // undocumented
-            case 0x05/*shf (IXY+n),L*/ -> state.l(val); // undocumented
-            case 0x06/*shf (IXY+n)*/ -> {} // ZUM(198-219) HTP(396-417,428-433)
-            case 0x07/*shf (IXY+n),A*/ -> state.a(val); // undocumented
-        }
+        set_additional_reg(opCode, val);
     }
 
-    private void decode_0xXY_0xCB_0x40v7F(int opCode, int address) {
-        int bit = (opCode & 0x38) >>> 3;
-        /*BIT b,(IXY+d)*/ bit_b_n(bit, bus.readMemory(address)); // ZUM(228-231) HTP(213-216)
+    private void decode_xy_cb_q1(int opCode, int address) {
+        /* `BIT b,(IXY+n)` ZUM(228-231) HTP(213-216) */
+        bit_b_n((opCode & 0x38) >>> 3, bus.readMemory(address));
     }
 
-    private void decode_0xXY_0xCB_0x80vBF(int opCode, int address) {
-        int bit = (opCode & 0x38) >>> 3;
-        int reg = (opCode & 0x07);
-        int val = res_b_n(bit, bus.readMemory(address));
+    private void decode_xy_cb_q2(int opCode, int address) {
+        /* `RES b,(IXY+n),r` ZUM(236-237) HTP(385-387) */
+        int val = res_b_n((opCode & 0x38) >>> 3, bus.readMemory(address));
         bus.writeMemory(address, val);
-        switch (reg) {
-            case 0x00/*RES b,(IXY+n),B*/ -> state.b(val); // undocumented
-            case 0x01/*RES b,(IXY+n),C*/ -> state.c(val); // undocumented
-            case 0x02/*RES b,(IXY+n),D*/ -> state.d(val); // undocumented
-            case 0x03/*RES b,(IXY+n),E*/ -> state.e(val); // undocumented
-            case 0x04/*RES b,(IXY+n),H*/ -> state.h(val); // undocumented
-            case 0x05/*RES b,(IXY+n),L*/ -> state.l(val); // undocumented
-            case 0x06/*RES b,(IXY+n)*/ -> {} // ZUM(236-237) HTP(385-387)
-            case 0x07/*RES b,(IXY+n),A*/ -> state.a(val); // undocumented
-        }
+        set_additional_reg(opCode, val);
     }
 
-    private void decode_0xXY_0xCB_0xC0vFF(int opCode, int address) {
-        int bit = (opCode & 0x38) >>> 3;
-        int reg = (opCode & 0x07);
-        int val = set_b_n(bit, bus.readMemory(address));
+    private void decode_xy_cb_q3(int opCode, int address) {
+        /* `SET b,(IXY+n),r` ZUM(234-235) HTP(425-427) */
+        int val = set_b_n((opCode & 0x38) >>> 3, bus.readMemory(address));
         bus.writeMemory(address, val);
-        switch (reg) {
-            case 0x00/*SET b,(IXY+n),B*/ -> state.b(val); // undocumented
-            case 0x01/*SET b,(IXY+n),C*/ -> state.c(val); // undocumented
-            case 0x02/*SET b,(IXY+n),D*/ -> state.d(val); // undocumented
-            case 0x03/*SET b,(IXY+n),E*/ -> state.e(val); // undocumented
-            case 0x04/*SET b,(IXY+n),H*/ -> state.h(val); // undocumented
-            case 0x05/*SET b,(IXY+n),L*/ -> state.l(val); // undocumented
-            case 0x06/*SET b,(IXY+n)*/ -> {} // ZUM(234-235) HTP(425-427)
-            case 0x07/*SET b,(IXY+n),A*/ -> state.a(val); // undocumented
-        }
+        set_additional_reg(opCode, val);
     }
 
     // ------------------------------------------------------------------------------
     // -------------------- Instruction implementation functions --------------------
     // ------------------------------------------------------------------------------
 
+    private void nop() {
+    }
+
+    private void nop(int ignorePrefix, int ignoreOpCode) {
+    }
+
     private void ld_a_i() { // ZUM(98) HTP(331)
         // TODO implementation
     }
+
     private void ld_a_r() { // ZUM(99) HTP(333)
         // TODO implementation
     }
+
     private void ld_i_a() { // ZUM(100) HTP(332)
         // TODO implementation
     }
+
     private void ld_r_a() { // ZUM(101) HTP(344)
         // TODO implementation
     }
@@ -744,8 +630,8 @@ final class Core {
     }
 
     private void add_a_n(int n) { // ZUM(140-145) HTP(194-202)
-        int ru = state.a() + n;
-        int rm = ru & 0xFF;
+        int ru = (int)(byte)state.a() + (int)(byte)n;
+        int rm = (byte)ru;
         state.cf(rm != ru);
         state.nf(false);
         state.pf(rm != ru);
@@ -756,8 +642,8 @@ final class Core {
     }
 
     private void adc_a_n(int n) { // ZUM(146-147) HTP(190-191)
-        int ru = state.a() + n + (state.cf() ? 1 : 0);
-        int rm = ru & 0xFF;
+        int ru = (int)(byte)state.a() + (int)(byte)n + (state.cf() ? 1 : 0);
+        int rm = (byte)ru;
         state.cf(rm != ru);
         state.nf(false);
         state.pf(rm != ru);
@@ -768,8 +654,8 @@ final class Core {
     }
 
     private void sub_n(int n) { // ZUM(148-149) HTP(434-435)
-        int ru = state.a() - n;
-        int rm = ru & 0xFF;
+        int ru = (int)(byte)state.a() - (int)(byte)n;
+        int rm = (byte)ru;
         state.cf(rm != ru);
         state.nf(true);
         state.pf(rm != ru);
@@ -780,8 +666,8 @@ final class Core {
     }
 
     private void sbc_a_n(int n) { // ZUM(150-151) HTP(420-421)
-        int ru = state.a() - n - (state.cf() ? 1 : 0);
-        int rm = ru & 0xFF;
+        int ru = (int)(byte)state.a() - (int)(byte)n - (state.cf() ? 1 : 0);
+        int rm = (byte)ru;
         state.cf(rm != ru);
         state.nf(true);
         state.pf(rm != ru);
@@ -855,7 +741,20 @@ final class Core {
     }
 
     private void daa() { // ZUM(166-167) HTP(236-237)
-        // TODO implementation
+        int ru = state.a();
+        int ff = (state.hf() || (ru & 0x0F) > 0x09) ? 0x06 : 0x00;
+        if (state.cf() || ru > 0x9F || (ru > 0x8F && (ru & 0x0F) > 0x09)) {
+            ff |= 0x60;
+        }
+        int rm = (state.nf() ? ru - ff : ru + ff) & 0xFF;
+        state.a(rm);
+        if (ru > 0x99) {
+            state.cf(true);
+        }
+        state.pf(parity(rm));
+        state.hf(state.nf() ? (ff & 0x0F) > (ru & 0x0F) : (ru & 0x0F) + (ff & 0xF) >= 0x10);
+        state.zf(rm == 0);
+        state.sf((rm & 0x80) != 0);
     }
 
     private void cpl() { // ZUM(168) HTP(235)
@@ -1243,36 +1142,141 @@ final class Core {
     // ------------------------------------------------------------------
 
     /**
+     * Used by non-indexed instructions to retrieve the value of an 8-bit register.
+     *
+     * @param reg The register to get as a bit-pattern (`(HL)` or `M` pseudo-register is 0b1110).
+     * @return The value gotten from the register.
+     */
+    private int get_reg(int reg) {
+        return switch (reg & 0x07) {
+            case 0x00 -> state.b();
+            case 0x01 -> state.c();
+            case 0x02 -> state.d();
+            case 0x03 -> state.e();
+            case 0x04 -> state.h();
+            case 0x05 -> state.l();
+            case 0x06 -> bus.readMemory(state.hl());
+            case 0x07 -> state.a();
+            default -> 0; // unreachable
+        };
+    }
+
+    /**
+     * Used by non-indexed instructions to set an 8-bit register.
+     *
+     * @param reg The register to set as a bit-pattern (`(HL)` or `M` pseudo-register is 0b1110).
+     * @param val THe value to set into the register.
+     */
+    private void set_reg(int reg, int val) {
+        switch (reg & 0x07) {
+            case 0x00 -> state.b(val);
+            case 0x01 -> state.c(val);
+            case 0x02 -> state.d(val);
+            case 0x03 -> state.e(val);
+            case 0x04 -> state.h(val);
+            case 0x05 -> state.l(val);
+            case 0x06 -> bus.writeMemory(state.hl(), val);
+            case 0x07 -> state.a(val);
+        }
+    }
+
+    /**
+     * Used by some of the 0xDD,0xCB or 0xFD,0xCB prefixed instructions (undocumented ones) to set another register,
+     * in addition to setting the memory value at `(IXY+n)`.
+     *
+     * @param reg The register to set as a bit-pattern (`(IXY+n)` is ignored as it will be set anyway).
+     * @param val THe value to set into the register (ignored for `(IX+n)` 0b1110).
+     */
+    private void set_additional_reg(int reg, int val) {
+        switch (reg & 0x07) {
+            case 0x00 -> state.b(val);
+            case 0x01 -> state.c(val);
+            case 0x02 -> state.d(val);
+            case 0x03 -> state.e(val);
+            case 0x04 -> state.h(val);
+            case 0x05 -> state.l(val);
+            case 0x06 -> {}
+            case 0x07 -> state.a(val);
+        }
+    }
+
+    /**
+     * Arithmetic and logical operations that involve the accumulator (or `A` register).
+     *
+     * @param opCode bits 3-5 determine which operation to select.
+     * @param val the parameter to the operation that is not the `A` register.
+     */
+    private void alu_acc(int opCode, int val) {
+        switch ((opCode & 0x38) >> 3) {
+            case 0x00/*ADD A,n*/ -> add_a_n(val); // ZUM(140-141) HTP(201-202)
+            case 0x01/*ADC A,n*/ -> adc_a_n(val); // ZUM(146-147) HTP(190-191)
+            case 0x02/*SUB n*/ -> sub_n(val); // ZUM(148-149) HTP(434-435)
+            case 0x03/*SBC A,n*/ -> sbc_a_n(val); // ZUM(150-151) HTP(420-421)
+            case 0x04/*AND n*/ -> and_n(val); // ZUM(152-153) HTP(209-210)
+            case 0x05/*XOR n*/ -> xor_n(val); // ZUM(156-157) HTP(436-437)
+            case 0x06/*OR n*/ -> or_n(val); // ZUM(154-155) HTP(360-361)
+            case 0x07/*CP n*/ -> cp_n(val); // ZUM(158-159) HTP(225-226)
+        }
+    }
+
+    /**
+     * Shift and rotate operations that involve 8 bit values.
+     *
+     * @param opCode bits 3-5 determine which operation to select.
+     * @param val the parameter to the operation.
+     * @return the result of performing the operation on the parameter.
+     */
+    private int shf_rot(int opCode, int val) {
+        return switch ((opCode & 0x38) >> 3) {
+            case 0x00/*RLC n*/ -> rlc_n(val); // ZUM(194-195) HTP(400-401)
+            case 0x01/*RRC n*/ -> rrc_n(val); // ZUM(205-207) HTP(413-414)
+            case 0x02/*RL n*/ -> rl_n(val); // ZUM(202-204) HTP(396-397)
+            case 0x03/*RR n*/ -> rr_n(val); // ZUM(208-210) HTP(410-411)
+            case 0x04/*SLA n*/ -> sla_n(val); // ZUM(211-213) HTP(428-429)
+            case 0x05/*SRA n*/ -> sra_n(val); // ZUM(214-216) HTP(430-431)
+            case 0x06/*SL1 n*/ -> sl1_n(val); // undocumented
+            case 0x07/*SRL n*/ -> srl_n(val); // ZUM(217-219) HTP(432-433)
+            default -> throw new IllegalStateException("Unexpected value in shf_rot switch: " + ((opCode & 0x38) >> 3));
+        };
+    }
+
+    /**
+     * Retrieve the MSB (byte) from a 16-bit value.
+     *
      * @param rrGet IntSupplier for 16-bit register in question
-     * @return MSB (byte) in the 16-bit value.
+     * @return high 8-bits from the 16-bit value.
      */
     private int high(IntSupplier rrGet) {
         return (rrGet.getAsInt() & 0xFF00) >>> 8;
     }
+
     /**
+     * Retrieve the LSB (byte) from a 16-bit value.
+     *
      * @param rrGet IntSupplier for 16-bit register in question
-     * @return LSB (byte) in the 16-bit value.
+     * @return low 8-bits from the 16-bit value.
      */
     private int low(IntSupplier rrGet) {
         return rrGet.getAsInt() & 0xFF;
     }
+
     /**
      * Set the MSB (byte) in the 16-bit value.
+     *
      * @param rrGet IntSupplier for 16-bit register in question
      * @param rrSet IntConsumer for 16-bit register in question
      */
     private void high(IntSupplier rrGet, IntConsumer rrSet, int highVal) {
-        int fullVal = ((highVal & 0xFF) << 8 )| (rrGet.getAsInt() & 0xFF);
-        rrSet.accept(fullVal);
+        rrSet.accept(((highVal & 0xFF) << 8 )| (rrGet.getAsInt() & 0xFF));
     }
     /**
      * Set the LSB (byte) in the 16-bit value.
+     *
      * @param rrGet IntSupplier for 16-bit register in question
      * @param rrSet IntConsumer for 16-bit register in question
      */
     private void low(IntSupplier rrGet, IntConsumer rrSet, int lowVal) {
-        int fullVal = (rrGet.getAsInt() & 0xFF00) | (lowVal & 0xFF);
-        rrSet.accept(fullVal);
+        rrSet.accept((rrGet.getAsInt() & 0xFF00) | (lowVal & 0xFF));
     }
 
     /**
@@ -1281,8 +1285,7 @@ final class Core {
      * this function during instruction decoding.
      */
     private int indexed(int nn) {
-        int offset = bus.readMemory(state.pcInc1());
-        return (nn + ((offset & 0x80) == 0 ? offset : offset - 0x100)) & 0xFFFF;
+        return (nn + (int)(byte)bus.readMemory(state.pcInc1())) & 0xFFFF;
     }
 
     /**
@@ -1291,9 +1294,5 @@ final class Core {
      */
     private boolean parity(int n) {
         return ((0x6996 >>> ((n ^ (n >>> 4)) & 0x0F)) & 1) == 0;
-    }
-
-    private void unrecognizedOpCode2(int prefix1, int opCode) {
-        System.err.printf("?0x%02x,0x%02x?  ", prefix1, opCode);
     }
 }
