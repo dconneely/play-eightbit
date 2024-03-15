@@ -109,48 +109,48 @@ public final class State {
         return cf;
     }
 
-    void cf(final boolean n) {
-        cf = n;
+    void cf(final boolean t) {
+        cf = t;
     }
 
     boolean nf() {
         return nf;
     }
 
-    void nf(final boolean n) {
-        nf = n;
+    void nf(final boolean t) {
+        nf = t;
     }
 
     boolean pf() {
         return pf;
     }
 
-    void pf(final boolean n) {
-        pf = n;
+    void pf(final boolean t) {
+        pf = t;
     }
 
     boolean hf() {
         return hf;
     }
 
-    void hf(final boolean n) {
-        hf = n;
+    void hf(final boolean t) {
+        hf = t;
     }
 
     boolean zf() {
         return zf;
     }
 
-    void zf(final boolean n) {
-        zf = n;
+    void zf(final boolean t) {
+        zf = t;
     }
 
     boolean sf() {
         return sf;
     }
 
-    void sf(final boolean n) {
-        sf = n;
+    void sf(final boolean t) {
+        sf = t;
     }
 
     // --- 16-Bit Main Pseudo Registers ---
@@ -159,36 +159,36 @@ public final class State {
         return (a << 8) | f();
     }
 
-    void af(final int n) {
-        a = (n & 0xFF00) >>> 8;
-        f(n & 0x00FF);
+    void af(final int nn) {
+        a = (nn & 0xFF00) >>> 8;
+        f(nn & 0x00FF);
     }
 
     int bc() {
         return (b << 8) | c;
     }
 
-    void bc(final int n) {
-        b = (n & 0xFF00) >>> 8;
-        c = n & 0x00FF;
+    void bc(final int nn) {
+        b = (nn & 0xFF00) >>> 8;
+        c = nn & 0x00FF;
     }
 
     int de() {
         return (d << 8) | e;
     }
 
-    void de(final int n) {
-        d = (n & 0xFF00) >>> 8;
-        e = n & 0x00FF;
+    void de(final int nn) {
+        d = (nn & 0xFF00) >>> 8;
+        e = nn & 0x00FF;
     }
 
     int hl() {
         return (h << 8) | l;
     }
 
-    void hl(final int n) {
-        h = (n & 0xFF00) >>> 8;
-        l = n & 0x00FF;
+    void hl(final int nn) {
+        h = (nn & 0xFF00) >>> 8;
+        l = nn & 0x00FF;
     }
 
     // --- 16-Bit Auxiliary Registers ---
@@ -197,48 +197,48 @@ public final class State {
         return ix;
     }
 
-    void ix(final int n) {
-        ix = n & 0xFFFF;
+    void ix(final int nn) {
+        ix = nn & 0xFFFF;
     }
 
     int iy() {
         return iy;
     }
 
-    void iy(final int n) {
-        iy = n & 0xFFFF;
+    void iy(final int nn) {
+        iy = nn & 0xFFFF;
     }
 
     int pc() {
         return pc;
     }
 
-    void pc(final int n) {
-        pc = n & 0xFFFF;
+    void pc(final int nn) {
+        pc = nn & 0xFFFF;
     }
 
     int sp() {
         return sp;
     }
 
-    void sp(final int n) {
-        sp = n & 0xFFFF;
+    void sp(final int nn) {
+        sp = nn & 0xFFFF;
     }
 
     // --- Alternate Registers ---
 
     void alt_af() {
-        int t = a; a = a_; a_ = t;
-        t = f(); f(f_); f_ = t;
+        int n = a; a = a_; a_ = n;
+        n = f(); f(f_); f_ = n;
     }
 
     void alt_bcdehl() {
-        int t = b; b = b_; b_ = t;
-        t = c; c = c_; c_ = t;
-        t = d; d = d_; d_ = t;
-        t = e; e = e_; e_ = t;
-        t = h; h = h_; h_ = t;
-        t = l; l = l_; l_ = t;
+        int n = b; b = b_; b_ = n;
+        n = c; c = c_; c_ = n;
+        n = d; d = d_; d_ = n;
+        n = e; e = e_; e_ = n;
+        n = h; h = h_; h_ = n;
+        n = l; l = l_; l_ = n;
     }
 
     // --- Utility methods ---
@@ -247,27 +247,27 @@ public final class State {
      * Post-increment PC by 1 (used for immediate bytes).
      */
     int pcInc1() {
-        int pc_ = pc;
+        int nn = pc;
         pc = (pc + 1) & 0xFFFF;
-        return pc_;
+        return nn;
     }
 
     /**
      * Post-increment PC by 2 (used for immediate words).
      */
     int pcInc2() {
-        int pc_ = pc;
+        int nn = pc;
         pc = (pc + 2) & 0xFFFF;
-        return pc_;
+        return nn;
     }
 
     /**
      * Post-increment SP by 2 (used for POP).
      */
     int spInc2() {
-        int sp_ = sp;
+        int nn = sp;
         sp = (sp + 2) & 0xFFFF;
-        return sp_;
+        return nn;
     }
 
     /**
