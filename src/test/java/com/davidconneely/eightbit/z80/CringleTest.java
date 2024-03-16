@@ -1,65 +1,84 @@
 package com.davidconneely.eightbit.z80;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public final class CringleTest {
+    private static final String PRELIM_RESOURCE = "/z80/cringle/prelim.com";
+    private static final String PRELIM_FINISHED = "Preliminary tests complete";
+    private static final String ZEXDOC_RESOURCE = "/z80/cringle/zexdoc.com";
+    private static final String ZEXALL_RESOURCE = "/z80/cringle/zexall.com";
+    private static final String ZEXANY_FAILURE  = "..  ERROR ****";
+    private static final String ZEXANY_SUCCESS  = "..  OK";
 
-    public static void main(String[] args) throws IOException {
-        CringleTest instance = new CringleTest();
-        instance.testDocumented();
-    }
-
-    @Test
-    public void testPrelim() throws IOException {
-        var output = run("/z80/cringle/prelim.com");
-        if (!output.equals("Preliminary tests complete")) {
-            System.err.println(output); System.err.flush();
-            fail("the test did not complete");
-        } else {
-            System.out.println(output); System.out.flush();
+    @Test @Order(1)
+    public void testPreliminaries() throws IOException {
+        var output = run(PRELIM_RESOURCE);
+        int failed = 0;
+        if (!output.equals(PRELIM_FINISHED)) {
+            ++failed;
+        }
+        System.out.println(output);
+        System.out.printf("===> %3$d/%1$d tests passed, %2$d/%1$d tests failed.%n%n", 1, failed, 1-failed);
+        if (failed != 0) {
+            fail("there were test failures");
         }
     }
 
-    @Test
-    public void testDocumented() throws IOException {
-        var lines = run("/z80/cringle/zexdoc.com").split("\\r?\\n\\r?");
-        int total = 0, error = 0, ok = 0;
+    @Test @Order(2)
+    public void testDocumentedFlags() throws IOException {
+        String output = run(ZEXDOC_RESOURCE);
+        var lines = output.split("\\r?\\n\\r?"); // test output uses "\n\r" instead of more standard "\n" or "\r\n"
+        int failed = 0, passed = 0;
         for (var line : lines) {
-            if (!line.equals("Z80doc instruction exerciser") && !line.equals("Tests complete") && !line.isBlank()) {
-                ++total;
-            } else {
-                System.out.println(line); System.out.flush();
-            }
-            if (line.contains("..  ERROR ****")) {
-                ++error;
-                System.err.println(line); System.out.flush();
-            } else if (line.contains("..  OK")) {
-                ++ok;
-                System.out.println(line); System.out.flush();
+            if (line.contains(ZEXANY_SUCCESS)) {
+                ++passed;
+            } else if (line.contains(ZEXANY_FAILURE)) {
+                ++failed;
             }
         }
-        System.out.printf("%3$d/%1$d tests passed, %2$d/%1$d tests failed.\n", total, error, ok); System.out.flush();
-        if (error != 0) {
-            fail("there were not zero test failures");
+        System.out.print(output);
+        System.out.printf("===> %3$d/%1$d tests passed, %2$d/%1$d tests failed.%n%n", failed+passed, failed, passed);
+        if (failed != 0) {
+            fail("there were test failures");
+        }
+    }
+
+    @Test @Order(3) @Disabled("Skipped because 37/67 tests pass, 30/67 tests fail - undocumented flags not currently implemented")
+    public void testUndocumentedFlags() throws IOException {
+        String output = run(ZEXALL_RESOURCE);
+        var lines = output.split("\\r?\\n\\r?"); // test output uses "\n\r" instead of more standard "\n" or "\r\n"
+        int failed = 0, passed = 0;
+        for (var line : lines) {
+            if (line.contains(ZEXANY_SUCCESS)) {
+                ++passed;
+            } else if (line.contains(ZEXANY_FAILURE)) {
+                ++failed;
+            }
+        }
+        System.out.print(output);
+        System.out.printf("===> %3$d/%1$d tests passed, %2$d/%1$d tests failed.%n%n", failed+passed, failed, passed);
+        if (failed != 0) {
+            fail("there were test failures");
         }
     }
 
     private String run(String resource) throws IOException {
-        try (var bais = new ByteArrayInputStream(new byte[0]);
-             var in = new BufferedInputStream(bais);
-             var baos = new ByteArrayOutputStream();
-             var out = new PrintStream(baos, true, StandardCharsets.UTF_8)) {
+        try (var is = new ByteArrayInputStream(new byte[0]);
+             var in = new BufferedInputStream(is);
+             var os = new ByteArrayOutputStream();
+             var out = new PrintStream(os, true, StandardCharsets.UTF_8)) {
             var machine = new CpmVerificationMachine(in, out);
             var data = CringleTest.class.getResourceAsStream(resource).readAllBytes();
             machine.load(0x0100, data);
             machine.run(0x100);
             out.flush();
-            return baos.toString(StandardCharsets.UTF_8);
+            return os.toString(StandardCharsets.UTF_8);
         }
     }
 }

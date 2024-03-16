@@ -67,20 +67,11 @@ final class CpmVerificationMachine implements AutoCloseable {
     }
 
     void load(int address, final byte[] program) {
-        bus.writeMemory(0x0000, 0x76); // HALT
-        bus.writeMemory(0x0001, 0x76); // HALT
-        bus.writeMemory(0x0002, 0x76); // HALT
-        bus.writeMemory(0x0003, 0x76); // HALT
-        bus.writeMemory(0x0004, 0x76); // HALT
-        bus.writeMemory(0x0005, 0xC9); // BDOS RET
-        bus.writeWord(0x0006, 0xFF00); // high memory (stack)
-        bus.writeMemory(0x0008, 0x76); // HALT
-        bus.writeMemory(0x0009, 0x76); // HALT
-        bus.writeMemory(0x000A, 0x76); // HALT
-        bus.writeMemory(0x000B, 0x76); // HALT
-        bus.writeMemory(0x000C, 0x76); // HALT
-        bus.writeMemory(0xFF00, 0x76); // HALT
-        bus.writeMemory(0xFFFF, 0x76); // HALT
+        bus.writeMemory(0x0000, 0x76); // `HALT`
+        bus.writeWord(0x0001, 0x0000);   // address of start of memory
+        bus.writeMemory(0x0005, 0xC9); // BDOS `RET`
+        bus.writeWord(0x0006, 0xFF00); // address of high memory (used to set `SP`)
+        bus.writeMemory(0xFF00, 0x76); // `HALT`
         bus.writeMemory(address, program, 0, program.length);
     }
 
@@ -110,6 +101,15 @@ final class CpmVerificationMachine implements AutoCloseable {
         return String.format("stack=0x%04x,0x%04x,0x%04x,0x%04x", stackTrace[0], stackTrace[1], stackTrace[2], stackTrace[3]);
     }
 
+    /**
+     * Emulates the simplest of the console input-output BDOS calls in CP/M (function number in `C` register, parameter
+     * in the `E` or `DE` register). Note that the console input-output uses the `bus#readIoPort` and `bus#writeIoPort`
+     * methods,so this (and `#writeString` and `#readString`) could be converted into Z80 instructions to run inside the
+     * emulator, rather than externally in Java.
+     *
+     * @param bus The machine bus (needed for memory and I/O access to implement console input-output).
+     * @param state The machine CPU state (needed to access registers).
+     */
     private void cpmBdosCall(final IBus bus, final State state) {
         final int func = state.c();
         switch (func) {
