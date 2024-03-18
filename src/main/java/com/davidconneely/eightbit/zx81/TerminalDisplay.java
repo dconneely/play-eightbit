@@ -67,7 +67,7 @@ public class TerminalDisplay implements IDisplay {
     @Override
     public void renderDFile(final IBus bus, final int address) {
         int read = address;
-        if (bus.readMemory(read) == 0x76) {
+        if (bus.cpuReadMem8(read) == 0x76) {
             ++read; // skip the initial `HALT`.
         }
         stream.print("\u001b[H"); // move to home.
@@ -94,7 +94,7 @@ public class TerminalDisplay implements IDisplay {
         boolean inverted = false;
         int column = 0;
         while (column < 33) {
-            int ch = bus.readMemory(read++);
+            int ch = bus.cpuReadMem8(read++);
             if ((ch & 0x40) != 0 || column == 32) break; // end translation if bit6 set, or line is too long.
             boolean inverse = (ch & 0x80) != 0; // inverse video if bit7 set.
             if (inverted != inverse) {

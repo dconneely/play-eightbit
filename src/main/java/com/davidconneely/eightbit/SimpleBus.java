@@ -5,25 +5,25 @@ public class SimpleBus implements IBus {
     private final byte[] memory = new byte[MEMORY_SIZE];
 
     @Override
-    public int readMemory(int address) {
+    public int intReadMem8(int address) {
         checkAddress(address, 1, 0, 1);
         return memory[address] & 0xFF;
     }
 
     @Override
-    public void readMemory(int address, byte[] dest, int offset, int length) {
+    public void intReadMemBlock(int address, byte[] dest, int offset, int length) {
         checkAddress(address, dest.length, offset, length);
         System.arraycopy(memory, address, dest, offset, length);
     }
 
     @Override
-    public void writeMemory(int address, int data) {
+    public void intWriteMem8(int address, int data) {
         checkAddress(address, 1, 0, 1);
         memory[address] = (byte) (data & 0xFF);
     }
 
     @Override
-    public void writeMemory(int address, byte[] source, int offset, int length) {
+    public void intWriteMemBlock(int address, byte[] source, int offset, int length) {
         checkAddress(address, source.length, offset, length);
         System.arraycopy(source, offset, memory, address, length);
     }
