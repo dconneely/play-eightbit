@@ -22,7 +22,7 @@ final class CpmVerificationMachine implements AutoCloseable {
         }
 
         @Override
-        public int readIoPort(int address) {
+        public int readIoPort(final int address) {
             if ((address & 0xFF) == 0x01) {
                 try {
                     return in.read();
@@ -35,7 +35,7 @@ final class CpmVerificationMachine implements AutoCloseable {
         }
 
         @Override
-        public void writeIoPort(int address, int data) {
+        public void writeIoPort(final int address, final int data) {
             if ((address & 0xFF) == 0x01) {
                 out.write((byte) data);
             }
@@ -54,7 +54,7 @@ final class CpmVerificationMachine implements AutoCloseable {
     private boolean terminated;
     private final IBus bus;
 
-    CpmVerificationMachine(InputStream in, PrintStream out) {
+    CpmVerificationMachine(final InputStream in, final PrintStream out) {
         this.terminated = false;
         this.bus = new CpmVerificationBus(in, out);
     }
@@ -66,7 +66,7 @@ final class CpmVerificationMachine implements AutoCloseable {
         }
     }
 
-    void load(int address, final byte[] program) {
+    void load(final int address, final byte[] program) {
         bus.writeMemory(0x0000, 0x76); // `HALT`
         bus.writeWord(0x0001, 0x0000);   // address of start of memory
         bus.writeMemory(0x0005, 0xC9); // BDOS `RET`
@@ -78,23 +78,26 @@ final class CpmVerificationMachine implements AutoCloseable {
     /**
      * Run the loaded program.
      */
-    void run(int address) {
-        Core z80 = new Core(bus);
+    void run(final int address) {
+        final Core z80 = new Core(bus);
         z80.state().pc(address);
-        while (!terminated && !z80.state().halted()) {
-            z80.step();
-            int pc = z80.state().pc();
-            if (pc == 0x0000) { // RST 0
+        while (!terminated) {
+            boolean stepped = z80.step();
+            if (!stepped) { // `HALT` occurred.
                 break;
-            } else if (pc == 0x0005) { // CPM BDOS
+            }
+            int pc = z80.state().pc();
+            if (pc == 0x0000) { // `RST 0`
+                terminated = true;
+            } else if (pc == 0x0005) { // CPM BDOS call
                 cpmBdosCall(bus, z80.state());
             }
         }
     }
 
     private String formattedStack(final IBus bus, final State state) {
-        int sp = state.sp();
-        int[] stackTrace = new int[4];
+        final int sp = state.sp();
+        final int[] stackTrace = new int[4];
         for (int i = sp; i < sp + stackTrace.length * 2 && i <= 0xFFFF; i += 2) {
             stackTrace[(i - sp) / 2] = bus.readWord(i);
         }
@@ -136,11 +139,11 @@ final class CpmVerificationMachine implements AutoCloseable {
     }
 
     private int readString(final IBus bus, int address) {
-        int capacity = (address <= 0xFFFF) ? bus.readMemory(address) : 0;
+        final int capacity = (address <= 0xFFFF) ? bus.readMemory(address) : 0;
         if (capacity <= 0 || capacity > 0xFF) {
             return 0;
         }
-        byte[] buffer = new byte[capacity+1];
+        final byte[] buffer = new byte[capacity+1];
         int index = 1;
         int ch = bus.readIoPort(0x0001);
         while (ch != '\n' && index < capacity) {

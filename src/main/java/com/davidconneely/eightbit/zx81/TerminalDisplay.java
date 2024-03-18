@@ -4,7 +4,7 @@ import com.davidconneely.eightbit.IBus;
 
 import java.io.PrintStream;
 
-public class TerminalDisplay {
+public class TerminalDisplay implements IDisplay {
     private final int[] codepoints = {
             ' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛',
             '▒', 0x1FB8F, 0x1FB8E, '"', '£', '$', ':', '?',
@@ -33,7 +33,8 @@ public class TerminalDisplay {
     /**
      * Call this before starting the display to prepare it for use.
      */
-    void init() {
+    @Override
+    public void init() {
         if (hideCursor) {
             stream.print("\u001b[?25l"); // hide the cursor.
         }
@@ -45,7 +46,8 @@ public class TerminalDisplay {
     /**
      * Call this after using the display to release and reset it.
      */
-    void close() {
+    @Override
+    public void close() {
         if (useAltBuffer) {
             stream.print("\u001b[?1049l"); // switch back to the normal buffer.
         }
@@ -61,20 +63,19 @@ public class TerminalDisplay {
      *
      * @param bus interface to read bytes from the display file.
      * @param address address of start of screen.
-     * @return int address of the end of the screen.
      */
-    int displayFile(final IBus bus, final int address) {
+    @Override
+    public void renderDFile(final IBus bus, final int address) {
         int read = address;
         if (bus.readMemory(read) == 0x76) {
             ++read; // skip the initial `HALT`.
         }
         stream.print("\u001b[H"); // move to home.
         for (int i = 0; i < 24; ++i) {
-            read = displayLine(bus, read);
+            read = renderLine(bus, read);
             stream.write('\r');
             stream.write('\n');
         }
-        return read;
     }
 
     /**
@@ -85,7 +86,7 @@ public class TerminalDisplay {
      * @param address address of start of line.
      * @return int address to continue next line from.
      */
-    int displayLine(final IBus bus, final int address) {
+    private int renderLine(final IBus bus, final int address) {
         if (doubleWidth) {
             stream.print("\u001b#6");
         }

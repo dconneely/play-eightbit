@@ -1,19 +1,10 @@
 package com.davidconneely.eightbit.z80;
 
 public final class State {
-    private boolean halted;
     private int a, b, c, d, e, h, l, i, r;
     private boolean cf, nf, pf, hf, zf, sf;
     private int ix, iy, pc, sp;
     private int a_, b_, c_, d_, e_, f_, h_, l_;
-
-    boolean halted() {
-        return halted;
-    }
-
-    void halted(boolean halted) {
-        this.halted = halted;
-    }
 
     // --- 8-Bit Main Registers ---
 
@@ -244,7 +235,15 @@ public final class State {
     // --- Utility methods ---
 
     /**
-     * Post-increment PC by 1 (used for immediate bytes).
+     * Pre-increment the `R` refresh register.
+     * @return The new value of `R` after the increment
+     */
+    int rInc() {
+        return (r = (r & 0x80) | ((r + 1) & 0x7F));
+    }
+
+    /**
+     * Post-increment `PC` by 1 (used for immediate bytes).
      */
     int pcInc1() {
         int nn = pc;
@@ -253,7 +252,7 @@ public final class State {
     }
 
     /**
-     * Post-increment PC by 2 (used for immediate words).
+     * Post-increment `PC` by 2 (used for immediate words).
      */
     int pcInc2() {
         int nn = pc;
@@ -262,7 +261,7 @@ public final class State {
     }
 
     /**
-     * Post-increment SP by 2 (used for POP).
+     * Post-increment `SP` by 2 (used for `POP`).
      */
     int spInc2() {
         int nn = sp;
@@ -271,11 +270,10 @@ public final class State {
     }
 
     /**
-     * Pre-decrement SP by 2 (used for PUSH).
+     * Pre-decrement `SP` by 2 (used for `PUSH`).
      */
     int spDec2() {
-        sp = (sp - 2) & 0xFFFF;
-        return sp;
+        return (sp = (sp - 2) & 0xFFFF);
     }
 
     String formatted(final int opCode) {
