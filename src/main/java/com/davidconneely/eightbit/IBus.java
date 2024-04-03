@@ -1,9 +1,22 @@
 package com.davidconneely.eightbit;
 
+/**
+ * Methods named `cpuRead*` or `cpuWrite*` are used by the emulator code to emulate reads and writes done by the
+ * emulated CPU itself. Normally these should be implemented as calls to the underlying `rawRead*` and `rawWrite*`
+ * methods, with whatever additional logic should apply _inside_ the emulator (e.g. read-only memory, etc.)
+ * <p>
+ * Methods named `rawRead*` or `rawWrite*` should be the actual implementation of the memory access or port i/o access.
+ * These are used by the emulator or other code to directly access the memory or i/o ports for observability or other
+ * purposes that are not part of the emulation of the CPU itself.
+ * <p>
+ * As an example, one might apply memory latency to the `cpuRead*` and `cpuWrite*` methods to emulate the real hardware
+ * more completely. However, the `rawRead*` and `rawWrite*` methods would not be subject to these delays so that
+ * the debugger was unaffected - only the execution of the emulated CPU and its memory accesses should be affected.
+ */
 public interface IBus {
-    // --------------------------------------------------------------------------
-    // ---------- Override the `cpu*` methods to add CPU restrictions. ----------
-    // --------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------------
+    // ---------- Override the `cpuRead*` and `cpuWrite*` methods that apply _inside_ the emulator ----------
+    // ------------------------------------------------------------------------------------------------------
 
     /**
      * Read a byte of data from memory (with CPU side-effects, specifically during M1 machine cycle).
@@ -21,7 +34,7 @@ public interface IBus {
      * @return int 8 bits of data read.
      */
     default int cpuReadMemInstr(int address) {
-        return cpuReadMem8(address);
+        return cpuReadMemByte(address);
     }
 
     /**
@@ -31,8 +44,8 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @return int 8 bits of data read.
      */
-    default int cpuReadMem8(int address) {
-        return intReadMem8(address);
+    default int cpuReadMemByte(int address) {
+        return rawReadMemByte(address);
     }
 
     /**
@@ -42,8 +55,8 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @return int 16 bits of data read.
      */
-    default int cpuReadMem16(int address) {
-        return (cpuReadMem8((address + 1) & 0xFFFF) << 8) | cpuReadMem8(address);
+    default int cpuReadMemWord(int address) {
+        return cpuReadMemByte(address) | (cpuReadMemByte((address + 1) & 0xFFFF) << 8);
     }
 
     /**
@@ -60,8 +73,8 @@ public interface IBus {
      * @param portNum 16-bit port number.
      * @return int 8 bits of data read.
      */
-    default int cpuReadPort8(int portNum) {
-        return intReadPort8(portNum);
+    default int cpuReadPortByte(int portNum) {
+        return rawReadPortByte(portNum);
     }
 
     /**
@@ -71,8 +84,8 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @param data 8 bits of data to write.
      */
-    default void cpuWriteMem8(int address, int data) {
-        intWriteMem8(address, data);
+    default void cpuWriteMemByte(int address, int data) {
+        rawWriteMemByte(address, data);
     }
 
     /**
@@ -82,9 +95,9 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @param data 16 bits of data to write.
      */
-    default void cpuWriteMem16(int address, int data) {
-        cpuWriteMem8(address, data & 0xFF);
-        cpuWriteMem8((address + 1) & 0xFFFF, (data & 0xFF00) >>> 8);
+    default void cpuWriteMemWord(int address, int data) {
+        cpuWriteMemByte(address, data & 0xFF);
+        cpuWriteMemByte((address + 1) & 0xFFFF, (data & 0xFF00) >>> 8);
     }
 
     /**
@@ -94,13 +107,13 @@ public interface IBus {
      * @param portNum 16-bit port number.
      * @param data 8 bits of data to write.
      */
-    default void cpuWritePort8(int portNum, int data) {
-        intWritePort8(portNum, data);
+    default void cpuWritePortByte(int portNum, int data) {
+        rawWritePortByte(portNum, data);
     }
 
-    // ---------------------------------------------------------------------------
-    // ---------- Override the `int*` methods to change implementation. ----------
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------
+    // ---------- Override the `rawRead*` and `rawWrite*` methods to change implementation ----------
+    // ----------------------------------------------------------------------------------------------
 
     /**
      * Read a byte of data from memory (without CPU side-effects).
@@ -109,7 +122,7 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @return int 8 bits of data read.
      */
-    int intReadMem8(int address);
+    /* abstract */ int rawReadMemByte(int address);
 
     /**
      * Read an array of data from memory (without CPU side-effects).
@@ -118,9 +131,9 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @param dest array to read the data into.
      */
-    default void intReadMemBlock(int address, byte[] dest, int offset, int length) {
+    default void rawReadMemBytes(int address, byte[] dest, int offset, int length) {
         for (int i = 0; i < length; ++i) {
-            dest[offset+i] = (byte) intReadMem8(address+i);
+            dest[offset+i] = (byte) rawReadMemByte(address+i);
         }
     }
 
@@ -131,7 +144,7 @@ public interface IBus {
      * @param portNum 16-bit port number.
      * @return int 8 bits of data read.
      */
-    default int intReadPort8(int portNum) {
+    default int rawReadPortByte(int portNum) {
         return 0;
     }
 
@@ -142,7 +155,7 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @param data 8 bits of data to write.
      */
-    void intWriteMem8(int address, int data);
+    /* abstract */ void rawWriteMemByte(int address, int data);
 
     /**
      * Write an array of data into memory (without CPU side-effects).
@@ -151,9 +164,9 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @param source array to write the data from.
      */
-    default void intWriteMemBlock(int address, byte[] source, int offset, int length) {
+    default void rawWriteMemBytes(int address, byte[] source, int offset, int length) {
         for (int i = 0; i < length; ++i) {
-            intWriteMem8(address+i, source[offset+i]);
+            rawWriteMemByte(address+i, source[offset+i]);
         }
     }
 
@@ -164,7 +177,7 @@ public interface IBus {
      * @param portNum 16-bit port number.
      * @param data 8 bits of data to write.
      */
-    default void intWritePort8(int portNum, int data) {
+    default void rawWritePortByte(int portNum, int data) {
         // do nothing.
     }
 }

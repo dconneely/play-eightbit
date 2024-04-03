@@ -1,10 +1,13 @@
 package com.davidconneely.eightbit.z80;
 
 public final class State {
-    private int a, b, c, d, e, h, l, i, r;
+    private int a, b, c, d, e, h, l;
     private boolean cf, nf, pf, hf, zf, sf;
     private int ix, iy, pc, sp;
     private int a_, b_, c_, d_, e_, f_, h_, l_;
+    private int i, r06, im;
+    private boolean r7, iff1, iff2, halted;
+
 
     // --- 8-Bit Main Registers ---
 
@@ -64,22 +67,6 @@ public final class State {
         l = n & 0xFF;
     }
 
-    int i() {
-        return i;
-    }
-
-    void i(final int n) {
-        i = n & 0xFF;
-    }
-
-    int r() {
-        return r;
-    }
-
-    void r(final int n) {
-        r = n & 0xFF;
-    }
-
     // --- Main Flags ---
 
     int f() {
@@ -96,7 +83,7 @@ public final class State {
         sf = (n & 0x80) != 0;
     }
 
-    boolean cf() {
+    public boolean cf() {
         return cf;
     }
 
@@ -164,7 +151,7 @@ public final class State {
         c = nn & 0x00FF;
     }
 
-    int de() {
+    public int de() {
         return (d << 8) | e;
     }
 
@@ -200,11 +187,11 @@ public final class State {
         iy = nn & 0xFFFF;
     }
 
-    int pc() {
+    public int pc() {
         return pc;
     }
 
-    void pc(final int nn) {
+    public void pc(final int nn) {
         pc = nn & 0xFFFF;
     }
 
@@ -214,6 +201,57 @@ public final class State {
 
     void sp(final int nn) {
         sp = nn & 0xFFFF;
+    }
+
+    // --- Interrupt Stuff ---
+
+    int i() {
+        return i;
+    }
+
+    void i(final int n) {
+        i = n & 0xFF;
+    }
+
+    int r() {
+        return r06 | (r7 ? 0x80 : 0x00);
+    }
+
+    void r(final int n) {
+        r06 = n & 0x7F;
+        r7 = (n & 0x80) != 0;
+    }
+
+    int im() {
+        return im;
+    }
+
+    void im(final int n) {
+        im = (n & 0x03) % 3;
+    }
+
+    boolean iff1() {
+        return iff1;
+    }
+
+    void iff1(final boolean t) {
+        iff1 = t;
+    }
+
+    boolean iff2() {
+        return iff2;
+    }
+
+    void iff2(final boolean t) {
+        iff2 = t;
+    }
+
+    public boolean halted() {
+        return halted;
+    }
+
+    void halted(final boolean t) {
+        this.halted = true;
     }
 
     // --- Alternate Registers ---
@@ -235,11 +273,10 @@ public final class State {
     // --- Utility methods ---
 
     /**
-     * Pre-increment the `R` refresh register.
-     * @return The new value of `R` after the increment
+     * Increment the `R` refresh register (bits 0 to 6 - bit 7 is left alone).
      */
-    int rInc() {
-        return (r = (r & 0x80) | ((r + 1) & 0x7F));
+    void rInc() {
+        r06 = (r06 + 1) & 0x7F;
     }
 
     /**
@@ -263,7 +300,7 @@ public final class State {
     /**
      * Post-increment `SP` by 2 (used for `POP`).
      */
-    int spInc2() {
+    public int spInc2() {
         int nn = sp;
         sp = (sp + 2) & 0xFFFF;
         return nn;

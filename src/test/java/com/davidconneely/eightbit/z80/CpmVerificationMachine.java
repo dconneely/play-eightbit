@@ -19,26 +19,26 @@ final class CpmVerificationMachine implements AutoCloseable {
         CpmVerificationBus(final InputStream in, final PrintStream out) {
             this.in = in;
             this.out = out;
-            intWriteMem8(0x0000, 0x76); // `HALT`
-            intWriteMem8(0x0001, 0x00); // address of start of memory (0x0000)
-            intWriteMem8(0x0002, 0x00); //    "
-            intWriteMem8(0x0005, 0xC9); // `RET` (from BDOS `CALL 0x0005`)
-            intWriteMem8(0x0006, 0x00); // address of high memory (used to set `SP`, 0xFF00)
-            intWriteMem8(0x0007, 0xFF); //    "
-            intWriteMem8(0xFF00, 0x76); // `HALT`
+            rawWriteMemByte(0x0000, 0x76); // `HALT`
+            rawWriteMemByte(0x0001, 0x00); // address of start of memory (0x0000)
+            rawWriteMemByte(0x0002, 0x00); //    "
+            rawWriteMemByte(0x0005, 0xC9); // `RET` (from BDOS `CALL 0x0005`)
+            rawWriteMemByte(0x0006, 0x00); // address of high memory (used to set `SP`, 0xFF00)
+            rawWriteMemByte(0x0007, 0xFF); //    "
+            rawWriteMemByte(0xFF00, 0x76); // `HALT`
         }
 
         @Override
-        public void cpuWriteMem8(final int address, final int data) {
+        public void cpuWriteMemByte(final int address, final int data) {
             if (address > 0x0007 && address != 0xFF00) { // read-only memory addresses.
-                super.cpuWriteMem8(address, data);
+                super.cpuWriteMemByte(address, data);
             }
         }
 
         @Override
-        public int intReadPort8(final int portNum) {
+        public int rawReadPortByte(final int portNum) {
             if ((portNum & 0xFF) != 0x01) {
-                return super.intReadPort8(portNum);
+                return super.rawReadPortByte(portNum);
             }
             try {
                 return in.read();
@@ -48,9 +48,9 @@ final class CpmVerificationMachine implements AutoCloseable {
         }
 
         @Override
-        public void intWritePort8(final int portNum, final int data) {
+        public void rawWritePortByte(final int portNum, final int data) {
             if ((portNum & 0xFF) != 0x01) {
-                super.intWritePort8(portNum, data);
+                super.rawWritePortByte(portNum, data);
             }
             out.write((byte) data);
         }
@@ -81,7 +81,7 @@ final class CpmVerificationMachine implements AutoCloseable {
     }
 
     void load(final int address, final byte[] program) {
-        bus.intWriteMemBlock(address, program, 0, program.length);
+        bus.rawWriteMemBytes(address, program, 0, program.length);
     }
 
     /**
@@ -91,8 +91,8 @@ final class CpmVerificationMachine implements AutoCloseable {
         final Core z80 = new Core(bus);
         z80.state().pc(address);
         while (!terminated) {
-            boolean stepped = z80.step();
-            if (!stepped) { // `HALT` occurred.
+            z80.step();
+            if (z80.state().halted()) { // `HALT` occurred.
                 break;
             }
             int pc = z80.state().pc();
@@ -108,7 +108,7 @@ final class CpmVerificationMachine implements AutoCloseable {
         final int sp = state.sp();
         final int[] stackTrace = new int[4];
         for (int i = sp; i < sp + stackTrace.length * 2 && i <= 0xFFFF; i += 2) {
-            stackTrace[(i - sp) / 2] = bus.cpuReadMem16(i);
+            stackTrace[(i - sp) / 2] = bus.cpuReadMemWord(i);
         }
         return String.format("stack=0x%04x,0x%04x,0x%04x,0x%04x", stackTrace[0], stackTrace[1], stackTrace[2], stackTrace[3]);
     }
@@ -127,11 +127,11 @@ final class CpmVerificationMachine implements AutoCloseable {
         switch (func) {
             case 0x00 -> terminated = true;
             case 0x01 -> {
-                int ch = bus.cpuReadPort8(0x0001);
+                int ch = bus.cpuReadPortByte(0x0001);
                 state.a(ch);
                 state.l(ch);
             }
-            case 0x02 -> bus.cpuWritePort8(0x0001, state.e());
+            case 0x02 -> bus.cpuWritePortByte(0x0001, state.e());
             case 0x09 -> writeString(bus, state.de());
             case 0x10 -> state.de(readString(bus, state.de()));
             default -> throw new UnsupportedOperationException("CPM BDOS func 0x%02x not implemented".formatted(func));
@@ -139,30 +139,30 @@ final class CpmVerificationMachine implements AutoCloseable {
     }
 
     private void writeString(final IBus bus, int address) {
-        int ch = (address <= 0xFFFF) ? bus.cpuReadMem8(address) : '$';
+        int ch = (address <= 0xFFFF) ? bus.cpuReadMemByte(address) : '$';
         while (ch != '$') {
-            bus.cpuWritePort8(0x0001, ch);
+            bus.cpuWritePortByte(0x0001, ch);
             ++address;
-            ch = (address <= 0xFFFF) ? bus.cpuReadMem8(address) : '$'; // don't wrap around past 0xFFFF
+            ch = (address <= 0xFFFF) ? bus.cpuReadMemByte(address) : '$'; // don't wrap around past 0xFFFF
         }
     }
 
     private int readString(final IBus bus, int address) {
-        final int capacity = (address <= 0xFFFF) ? bus.cpuReadMem8(address) : 0;
+        final int capacity = (address <= 0xFFFF) ? bus.cpuReadMemByte(address) : 0;
         if (capacity <= 0 || capacity > 0xFF) {
             return 0;
         }
         final byte[] buffer = new byte[capacity+1];
         int index = 1;
-        int ch = bus.cpuReadPort8(0x0001);
+        int ch = bus.cpuReadPortByte(0x0001);
         while (ch != '\n' && index < capacity) {
             if (ch != '\r') {
                 buffer[index++] = (byte) ch;
             }
-            ch = bus.cpuReadPort8(0x0001);
+            ch = bus.cpuReadPortByte(0x0001);
         }
         buffer[0] = (byte) (index-1);
-        bus.intWriteMemBlock(address+1, buffer, 0, index);
+        bus.rawWriteMemBytes(address+1, buffer, 0, index);
         return index-1;
     }
 }
