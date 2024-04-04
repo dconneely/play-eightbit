@@ -53,15 +53,16 @@ public class ZX81Machine {
             int pc = core.state().pc();
             if (pc == 0x0343) {
                 if (core.state().cf()) {
-                    core.state().pc(0x02f4); // LOAD requires a filename in this emulator.
+                    core.state().pc(0x02F4); // LOAD requires a filename in this emulator.
                 } else {
                     loadProgram(core.state().de());
                     core.state().pc(bus.cpuReadMemWord(core.state().spInc2()));
                 }
             }
             if (pc > 0x7FFF) { // we're probably waiting on user input.
+                long now = System.currentTimeMillis();
                 display.renderDFile(bus);
-                lastRender = System.currentTimeMillis();
+                lastRender = now;
                 // effective RET.
                 core.state().pc(bus.cpuReadMemWord(core.state().spInc2()));
                 continue;

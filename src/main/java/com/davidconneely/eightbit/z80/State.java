@@ -222,16 +222,8 @@ public final class State {
         r7 = (n & 0x80) != 0;
     }
 
-    int im() {
-        return im;
-    }
-
     void im(final int n) {
         im = (n & 0x03) % 3;
-    }
-
-    boolean iff1() {
-        return iff1;
     }
 
     void iff1(final boolean t) {

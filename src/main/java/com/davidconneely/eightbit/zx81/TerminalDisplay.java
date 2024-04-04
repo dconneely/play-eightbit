@@ -2,8 +2,6 @@ package com.davidconneely.eightbit.zx81;
 
 import com.davidconneely.eightbit.IBus;
 
-import java.io.PrintStream;
-
 public class TerminalDisplay {
     private final int[] codepoints = {
             ' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛',
@@ -26,17 +24,14 @@ public class TerminalDisplay {
      * Call this before starting the display to prepare it for use.
      */
     public void init() {
-        terminal.print("\u001b[?25l"); // hide the cursor.
-        terminal.print("\u001b[?1049h"); // use the alternate buffer.
+        terminal.print("\u001b[?25l\u001b[?1049h"); // hide the cursor, use the alternate buffer.
     }
 
     /**
      * Call this after using the display to release and reset it.
      */
     public void reset() {
-        terminal.print("\u001b[?1049l"); // switch back to the normal buffer.
-        terminal.print("\u001b[?25h"); // show the cursor again.
-        terminal.print("\u001b[0m"); // reset display attributes.
+        terminal.print("\u001b[?1049l\u001b[?25h\u001b[0m"); // switch back to the normal buffer, show the cursor again, reset display attributes.
     }
 
     /**
@@ -46,14 +41,13 @@ public class TerminalDisplay {
      * @param bus interface to read bytes from the display file.
      */
     public void renderDFile(final IBus bus) {
-        final int addressDFile = bus.cpuReadMemWord(0x400C);
-        int read = addressDFile;
-        if (bus.cpuReadMemByte(read) == 0x76) {
-            ++read; // skip the initial `HALT`.
+        int address = bus.cpuReadMemWord(0x400C); // value of D_FILE
+        if (bus.cpuReadMemByte(address) == 0x76) {
+            ++address; // skip the initial `HALT`.
         }
         terminal.print("\u001b[H\u001b#6\u001b[7m                                  \u001b[27m\u001b[K\r\n"); // move to home, double-width row/line, top margin (34 spaces), erase to end of line, CR-LF.
         for (int i = 0; i < 24; ++i) {
-            read = renderLine(bus, read);
+            address = renderLine(bus, address);
             terminal.write('\r');
             terminal.write('\n');
         }
@@ -64,17 +58,16 @@ public class TerminalDisplay {
      * Convert a line from the display file into a UTF-8 and ANSI-escapes stream that can be displayed in a terminal.
      * Inverse video mode is always reset at the end of the line. Any bytes with bit 6 set (usually 0x76) end the line.
      *
-     * @param bus interface to read bytes from the display file.
+     * @param bus     interface to read bytes from the display file.
      * @param address address of start of line.
      * @return int address to continue next line from.
      */
-    private int renderLine(final IBus bus, final int address) {
+    private int renderLine(final IBus bus, int address) {
         terminal.print("\u001b#6\u001b[7m "); // double-width row/line, left margin (one space).
-        int read = address;
         boolean inverted = true;
         int column = 0;
         while (column < 33) {
-            int ch = bus.cpuReadMemByte(read++);
+            int ch = bus.cpuReadMemByte(address++);
             if ((ch & 0x40) != 0 || column == 32) break; // end translation if bit6 set, or line is too long.
             boolean inverse = (ch & 0x80) == 0; // inverse video if bit7 set.
             if (inverted != inverse) {
@@ -87,11 +80,11 @@ public class TerminalDisplay {
         if (!inverted) {
             terminal.print("\u001b[7m");
         }
-        while (column < 32) {
-            terminal.print(" ");
+        while (column < 32) { // only used with collapsed display file.
+            terminal.write(' ');
         }
         terminal.print(" \u001b[27m\u001b[K"); // right margin (one space), reset inverse, erase to end of line.
-        return read;
+        return address;
     }
 
     /**

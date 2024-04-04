@@ -5,7 +5,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public final class CringleTest {
@@ -13,10 +13,11 @@ public final class CringleTest {
     private static final String PRELIM_FINISHED = "Preliminary tests complete";
     private static final String ZEXDOC_RESOURCE = "/z80/cringle/zexdoc.com";
     private static final String ZEXALL_RESOURCE = "/z80/cringle/zexall.com";
-    private static final String ZEXANY_FAILURE  = "..  ERROR ****";
-    private static final String ZEXANY_SUCCESS  = "..  OK";
+    private static final String ZEXANY_FAILURE = "..  ERROR ****";
+    private static final String ZEXANY_SUCCESS = "..  OK";
 
-    @Test @Order(1)
+    @Test
+    @Order(1)
     public void testPreliminaries() throws IOException {
         var output = run(PRELIM_RESOURCE);
         int failed = 0;
@@ -24,13 +25,14 @@ public final class CringleTest {
             ++failed;
         }
         System.out.println(output);
-        System.out.printf("===> %3$d/%1$d tests passed, %2$d/%1$d tests failed.%n%n", 1, failed, 1-failed);
+        System.out.printf("===> %3$d/%1$d tests passed, %2$d/%1$d tests failed.%n%n", 1, failed, 1 - failed);
         if (failed != 0) {
             fail("there were test failures");
         }
     }
 
-    @Test @Order(2)
+    @Test
+    @Order(2)
     public void testDocumentedFlags() throws IOException {
         String output = run(ZEXDOC_RESOURCE);
         var lines = output.split("\\r?\\n\\r?"); // test output uses "\n\r" instead of more standard "\n" or "\r\n"
@@ -43,13 +45,15 @@ public final class CringleTest {
             }
         }
         System.out.print(output);
-        System.out.printf("===> %3$d/%1$d tests passed, %2$d/%1$d tests failed.%n%n", failed+passed, failed, passed);
+        System.out.printf("===> %3$d/%1$d tests passed, %2$d/%1$d tests failed.%n%n", failed + passed, failed, passed);
         if (failed != 0) {
             fail("there were test failures");
         }
     }
 
-    @Test @Order(3) @Disabled("Skipped because 37/67 tests pass, 30/67 tests fail - undocumented flags not currently implemented")
+    @Test
+    @Order(3)
+    @Disabled("Skipped because 37/67 tests pass, 30/67 tests fail - undocumented flags not currently implemented")
     public void testUndocumentedFlags() throws IOException {
         String output = run(ZEXALL_RESOURCE);
         var lines = output.split("\\r?\\n\\r?"); // test output uses "\n\r" instead of more standard "\n" or "\r\n"
@@ -62,7 +66,7 @@ public final class CringleTest {
             }
         }
         System.out.print(output);
-        System.out.printf("===> %3$d/%1$d tests passed, %2$d/%1$d tests failed.%n%n", failed+passed, failed, passed);
+        System.out.printf("===> %3$d/%1$d tests passed, %2$d/%1$d tests failed.%n%n", failed + passed, failed, passed);
         if (failed != 0) {
             fail("there were test failures");
         }

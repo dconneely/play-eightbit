@@ -119,7 +119,7 @@ final class CpmVerificationMachine implements AutoCloseable {
      * methods,so this (and `#writeString` and `#readString`) could be converted into Z80 instructions to run inside the
      * emulator, rather than externally in Java.
      *
-     * @param bus The machine bus (needed for memory and I/O access to implement console input-output).
+     * @param bus   The machine bus (needed for memory and I/O access to implement console input-output).
      * @param state The machine CPU state (needed to access registers).
      */
     private void cpmBdosCall(final IBus bus, final State state) {
@@ -152,7 +152,7 @@ final class CpmVerificationMachine implements AutoCloseable {
         if (capacity <= 0 || capacity > 0xFF) {
             return 0;
         }
-        final byte[] buffer = new byte[capacity+1];
+        final byte[] buffer = new byte[capacity + 1];
         int index = 1;
         int ch = bus.cpuReadPortByte(0x0001);
         while (ch != '\n' && index < capacity) {
@@ -161,8 +161,8 @@ final class CpmVerificationMachine implements AutoCloseable {
             }
             ch = bus.cpuReadPortByte(0x0001);
         }
-        buffer[0] = (byte) (index-1);
-        bus.rawWriteMemBytes(address+1, buffer, 0, index);
-        return index-1;
+        buffer[0] = (byte) (index - 1);
+        bus.rawWriteMemBytes(address + 1, buffer, 0, index);
+        return index - 1;
     }
 }

@@ -1,7 +1,5 @@
 package com.davidconneely.eightbit.zx81;
 
-import java.io.EOFException;
-import java.io.IOException;
 import java.util.Map;
 
 /**

@@ -82,7 +82,7 @@ public interface IBus {
      * To be used by the emulator when emulating CPU memory access.
      *
      * @param address 16-bit memory address.
-     * @param data 8 bits of data to write.
+     * @param data    8 bits of data to write.
      */
     default void cpuWriteMemByte(int address, int data) {
         rawWriteMemByte(address, data);
@@ -93,7 +93,7 @@ public interface IBus {
      * To be used by the emulator when emulating CPU memory access.
      *
      * @param address 16-bit memory address.
-     * @param data 16 bits of data to write.
+     * @param data    16 bits of data to write.
      */
     default void cpuWriteMemWord(int address, int data) {
         cpuWriteMemByte(address, data & 0xFF);
@@ -104,8 +104,9 @@ public interface IBus {
      * Write a byte of data to an I/O port (with CPU side-effects).
      * To be used by the emulator when emulating CPU I/O access.
      * <p>
+     *
      * @param portNum 16-bit port number.
-     * @param data 8 bits of data to write.
+     * @param data    8 bits of data to write.
      */
     default void cpuWritePortByte(int portNum, int data) {
         rawWritePortByte(portNum, data);
@@ -129,11 +130,11 @@ public interface IBus {
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
      *
      * @param address 16-bit memory address.
-     * @param dest array to read the data into.
+     * @param dest    array to read the data into.
      */
     default void rawReadMemBytes(int address, byte[] dest, int offset, int length) {
         for (int i = 0; i < length; ++i) {
-            dest[offset+i] = (byte) rawReadMemByte(address+i);
+            dest[offset + i] = (byte) rawReadMemByte(address + i);
         }
     }
 
@@ -153,7 +154,7 @@ public interface IBus {
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
      *
      * @param address 16-bit memory address.
-     * @param data 8 bits of data to write.
+     * @param data    8 bits of data to write.
      */
     /* abstract */ void rawWriteMemByte(int address, int data);
 
@@ -162,11 +163,11 @@ public interface IBus {
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
      *
      * @param address 16-bit memory address.
-     * @param source array to write the data from.
+     * @param source  array to write the data from.
      */
     default void rawWriteMemBytes(int address, byte[] source, int offset, int length) {
         for (int i = 0; i < length; ++i) {
-            rawWriteMemByte(address+i, source[offset+i]);
+            rawWriteMemByte(address + i, source[offset + i]);
         }
     }
 
@@ -174,8 +175,9 @@ public interface IBus {
      * Write a byte of data to an I/O port (without CPU side-effects).
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
      * <p>
+     *
      * @param portNum 16-bit port number.
-     * @param data 8 bits of data to write.
+     * @param data    8 bits of data to write.
      */
     default void rawWritePortByte(int portNum, int data) {
         // do nothing.

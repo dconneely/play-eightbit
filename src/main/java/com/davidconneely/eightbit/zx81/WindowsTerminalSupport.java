@@ -1,8 +1,6 @@
 package com.davidconneely.eightbit.zx81;
 
 import org.fusesource.jansi.internal.JansiLoader;
-import org.fusesource.jansi.internal.Kernel32.INPUT_RECORD;
-import org.fusesource.jansi.internal.Kernel32.KEY_EVENT_RECORD;
 
 import java.io.IOException;
 

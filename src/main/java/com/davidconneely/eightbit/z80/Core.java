@@ -222,7 +222,7 @@ public final class Core {
             case 0x43/*LD (nn),BC*/ -> bus.cpuWriteMemWord(bus.cpuReadMemWord(state.pcInc2()), state.bc()); // ZUM(110) HTP(321-322)
             case 0x44/*NEG*/ -> neg(); // ZUM(169) HTP(358)
             case 0x45/*RETN*/ -> retn(); // ZUM(265-266) HTP(394-395)
-            case 0x46/*IM 0*/ -> im0(); // ZUM(176) HTP(258)
+            case 0x46/*IM 0*/ -> state.im(0); // ZUM(176) HTP(258)
             case 0x47/*LD I,A*/ -> state.i(state.a()); // ZUM(100) HTP(332)
             case 0x48/*IN C,(C)*/ -> state.c(bus.cpuReadPortByte(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x49/*OUT (C),C*/ -> bus.cpuWritePortByte(state.bc(), state.c()); // ZUM(280-281) HTP(366-367)
@@ -230,7 +230,7 @@ public final class Core {
             case 0x4B/*LD BC,(nn)*/ -> state.bc(bus.cpuReadMemWord(bus.cpuReadMemWord(state.pcInc2()))); // ZUM(106) HTP(291-292)
             case 0x4C/*NEG'*/ -> neg(); // undocumented
             case 0x4D/*RETI*/ -> reti(); // ZUM(263-264) HTP(392-393)
-            case 0x4E/*IM' 0*/ -> im0(); // undocumented
+            case 0x4E/*IM' 0*/ -> state.im(0); // undocumented
             case 0x4F/*LD R,A*/ -> state.r(state.a()); // ZUM(101) HTP(344)
             case 0x50/*IN D,(C)*/ -> state.d(bus.cpuReadPortByte(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x51/*OUT (C),D*/ -> bus.cpuWritePortByte(state.bc(), state.d()); // ZUM(280-281) HTP(366-367)
@@ -238,7 +238,7 @@ public final class Core {
             case 0x53/*LD (nn),DE*/ -> bus.cpuWriteMemWord(bus.cpuReadMemWord(state.pcInc2()), state.de()); // ZUM(110) HTP(321-322)
             case 0x54/*NEG'*/ -> neg(); // undocumented
             case 0x55/*RETN'*/ -> retn(); // undocumented
-            case 0x56/*IM 1*/ -> im1(); // ZUM(177) HTP(259)
+            case 0x56/*IM 1*/ -> state.im(1); // ZUM(177) HTP(259)
             case 0x57/*LD A,I*/ -> ld_a_i(); // ZUM(98) HTP(331)
             case 0x58/*IN E,(C)*/ -> state.e(bus.cpuReadPortByte(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x59/*OUT (C),E*/ -> bus.cpuWritePortByte(state.bc(), state.e()); // ZUM(280-281) HTP(366-367)
@@ -246,7 +246,7 @@ public final class Core {
             case 0x5B/*LD DE,(nn)*/ -> state.de(bus.cpuReadMemWord(bus.cpuReadMemWord(state.pcInc2()))); // ZUM(106) HTP(291-292)
             case 0x5C/*NEG'*/ -> neg(); // undocumented
             case 0x5D/*RETN'*/ -> retn(); // undocumented
-            case 0x5E/*IM 2*/ -> im2(); // ZUM(178) HTP(260)
+            case 0x5E/*IM 2*/ -> state.im(2); // ZUM(178) HTP(260)
             case 0x5F/*LD A,R*/ -> ld_a_r(); // ZUM(99) HTP(333)
             case 0x60/*IN H,(C)*/ -> state.h(bus.cpuReadPortByte(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x61/*OUT (C),H*/ -> bus.cpuWritePortByte(state.bc(), state.h()); // ZUM(280-281) HTP(366-367)
@@ -254,7 +254,7 @@ public final class Core {
             case 0x63/*LD' (nn),HL*/ -> bus.cpuWriteMemWord(bus.cpuReadMemWord(state.pcInc2()), state.hl()); // ZUM(110) HTP(321-322)
             case 0x64/*NEG'*/ -> neg(); // undocumented
             case 0x65/*RETN'*/ -> retn(); // undocumented
-            case 0x66/*IM' 1*/ -> im1(); // undocumented
+            case 0x66/*IM' 1*/ -> state.im(1); // undocumented
             case 0x67/*RRD*/ -> rrd(); // ZUM(222-223) HTP(416-417)
             case 0x68/*IN L,(C)*/ -> state.l(bus.cpuReadPortByte(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x69/*OUT (C),L*/ -> bus.cpuWritePortByte(state.bc(), state.l()); // ZUM(280-281) HTP(366-367)
@@ -262,7 +262,7 @@ public final class Core {
             case 0x6B/*LD' HL,(nn)*/ -> state.hl(bus.cpuReadMemWord(state.pcInc2())); // ZUM(106) HTP(291-292)
             case 0x6C/*NEG'*/ -> neg(); // undocumented
             case 0x6D/*RETN'*/ -> retn(); // undocumented
-            case 0x6E/*IM' 1*/ -> im1(); // undocumented
+            case 0x6E/*IM' 1*/ -> state.im(1); // undocumented
             case 0x6F/*RLD*/ -> rld(); // ZUM(220-221) HTP(408-409)
             case 0x70/*IN' (C)*/ -> bus.cpuReadPortByte(state.bc()); // undocumented
             case 0x71/*OUT' (C)-*/ -> bus.cpuWritePortByte(state.bc(), 0); // undocumented
@@ -270,14 +270,14 @@ public final class Core {
             case 0x73/*LD (nn),SP*/ -> bus.cpuWriteMemWord(bus.cpuReadMemWord(state.pcInc2()), state.sp()); // ZUM(110) HTP(321-322)
             case 0x74/*NEG'*/ -> neg(); // undocumented
             case 0x75/*RETN'*/ -> retn(); // undocumented
-            case 0x76/*IM' 1*/ -> im1(); // undocumented
+            case 0x76/*IM' 1*/ -> state.im(1); // undocumented
             case 0x78/*IN A,(C)*/ -> state.a(bus.cpuReadPortByte(state.bc())); // ZUM(270-271) HTP(261-262)
             case 0x79/*OUT (C),A*/ -> bus.cpuWritePortByte(state.bc(), state.a()); // ZUM(280-281) HTP(366-367)
             case 0x7A/*ADC HL,SP*/ -> adc_hl_nn(state.sp()); // ZUM(180) HTP(192-193)
             case 0x7B/*LD SP,(nn)*/ -> state.sp(bus.cpuReadMemWord(bus.cpuReadMemWord(state.pcInc2()))); // ZUM(106) HTP(291-292)
             case 0x7C/*NEG'*/ -> neg(); // undocumented
             case 0x7D/*RETN'*/ -> retn(); // undocumented
-            case 0x7E/*IM' 2*/ -> im2(); // undocumented
+            case 0x7E/*IM' 2*/ -> state.im(2); // undocumented
             default -> nop_(0xED, opCode); // e.g. [0xED],[0x77] and [0xED],[0x7F]
         }
     }
@@ -519,12 +519,14 @@ public final class Core {
         state.pf(state.bc() != 0);
         state.hf(false);
     }
+
     private void ldir() { // ZUM(129-130) HTP(354-355)
         ldi();
         if (state.pf()) {
-            state.pc(state.pc()-2); // repeat the instruction.
+            state.pc(state.pc() - 2); // repeat the instruction.
         }
     }
+
     private void ldd() { // ZUM(131) HTP(348-349)
         bus.cpuWriteMemByte(state.de(), bus.cpuReadMemByte(state.hl()));
         state.de(state.de() - 1);
@@ -535,12 +537,14 @@ public final class Core {
         state.pf(state.bc() != 0);
         state.hf(false);
     }
+
     private void lddr() { // ZUM(132-133) HTP(350-351)
         ldd();
         if (state.pf()) {
-            state.pc(state.pc()-2); // repeat the instruction.
+            state.pc(state.pc() - 2); // repeat the instruction.
         }
     }
+
     private void cpi() { // ZUM(134) HTP(231-232)
         int n = bus.cpuReadMemByte(state.hl());
         int rm = (state.a() - n) & 0xFF;
@@ -553,12 +557,12 @@ public final class Core {
         state.zf(rm == 0);
         state.sf((rm & 0x80) != 0);
     }
+
     private void cpir() { // ZUM(135-136) HTP(233-234)
         cpi();
-        if (!state.zf() && state.pf()) {
-            state.pc(state.pc()-2); // repeat the instruction.
-        }
+        if (!state.zf() && state.pf()) {state.pc(state.pc() - 2);} // repeat the instruction.
     }
+
     private void cpd() { // ZUM(137) HTP(227-228)
         int n = bus.cpuReadMemByte(state.hl());
         int rm = (state.a() - n) & 0xFF;
@@ -571,11 +575,10 @@ public final class Core {
         state.zf(rm == 0);
         state.sf((rm & 0x80) != 0);
     }
+
     private void cpdr() { // ZUM(138-139) HTP(229-230)
         cpd();
-        if (!state.zf() && state.pf()) {
-            state.pc(state.pc()-2); // repeat the instruction.
-        }
+        if (!state.zf() && state.pf()) {state.pc(state.pc() - 2);} // repeat the instruction.
     }
 
     private void add_a_n(int n) { // ZUM(140-145) HTP(194-202)
@@ -751,18 +754,6 @@ public final class Core {
         state.iff1(true);
         state.iff2(true);
         // TODO implementation (diflag = true;/*prevent int for one instr*/)
-    }
-
-    private void im0() { // ZUM(176) HTP(258)
-        state.im(0);
-    }
-
-    private void im1() { // ZUM(177) HTP(259)
-        state.im(1);
-    }
-
-    private void im2() { // ZUM(178) HTP(260)
-        state.im(2);
     }
 
     private void add_hl_nn(int nn) { // ZUM(179) HTP(203-204)
@@ -973,12 +964,12 @@ public final class Core {
     }
 
     private void bit_m_n(int m, int n) { // ZUM(224-231) HTP(211-218)
-        boolean bitm = (n & (1 << (m & 0x07))) != 0;
+        boolean bit = (n & (1 << (m & 0x07))) != 0;
         state.nf(false);
-        state.pf(!bitm);
+        state.pf(!bit);
         state.hf(true);
-        state.zf(!bitm);
-        state.sf(m == 7 && bitm);
+        state.zf(!bit);
+        state.sf(m == 7 && bit);
     }
 
     private int set_m_n(int m, int n) { // ZUM(232-235) HTP(425-427)
@@ -994,7 +985,7 @@ public final class Core {
     }
 
     private void jp_t(boolean t) { // ZUM(239-240) HTP(282-283)
-        if (t) { jp(); } else { state.pcInc2(); }
+        if (t) {jp();} else {state.pcInc2();}
     }
 
     private void jr() { // ZUM(241) HTP(290)
@@ -1002,12 +993,12 @@ public final class Core {
     }
 
     private void jr_t(boolean t) { // ZUM(242-249) HTP(288-289
-        if (t) { jr(); } else { state.pcInc1(); }
+        if (t) {jr();} else {state.pcInc1();}
     }
 
     private void djnz() { // ZUM(253-254) HTP(245-246)
         state.b(state.b() - 1);
-        if (state.b() != 0) { jr(); } else { state.pcInc1(); }
+        if (state.b() != 0) {jr();} else {state.pcInc1();}
     }
 
     private void call() { // ZUM(255-256) HTP(222-223)
@@ -1017,7 +1008,7 @@ public final class Core {
     }
 
     private void call_t(boolean t) { // ZUM(257-259) HTP(219-221)
-        if (t) { call(); } else { state.pcInc2(); }
+        if (t) {call();} else {state.pcInc2();}
     }
 
     private void ret() { // ZUM(260) HTP(388-389)
@@ -1025,7 +1016,7 @@ public final class Core {
     }
 
     private void ret_t(boolean t) { // ZUM(261-262) HTP(390-391)
-        if (t) { ret(); }
+        if (t) {ret();}
     }
 
     private void reti() { // ZUM(263-264) HTP(392-393)
@@ -1051,12 +1042,12 @@ public final class Core {
         state.zf(state.b() == 0);
         state.nf(false);
     }
+
     private void inir() { // ZUM(273-274) HTP(280-281)
         ini();
-        if (!state.zf()) {
-            state.pc(state.pc()-2); // repeat the instruction.
-        }
+        if (!state.zf()) {state.pc(state.pc() - 2);} // repeat the instruction.
     }
+
     private void ind() { // ZUM(275-276) HTP(274-275)
         int rm = bus.cpuReadPortByte(state.bc());
         bus.cpuWriteMemByte(state.hl(), rm);
@@ -1065,12 +1056,12 @@ public final class Core {
         state.zf(state.b() == 0);
         state.nf(true);
     }
+
     private void indr() { // ZUM(277-278) HTP(276-277)
         ind();
-        if (!state.zf()) {
-            state.pc(state.pc()-2); // repeat the instruction.
-        }
+        if (!state.zf()) {state.pc(state.pc() - 2);} // repeat the instruction.
     }
+
     private void outi() { // ZUM(282) HTP(371-372)
         bus.cpuWritePortByte(state.bc(), bus.cpuReadMemByte(state.hl()));
         state.b(state.b() - 1);
@@ -1078,12 +1069,12 @@ public final class Core {
         state.zf(state.b() == 0);
         state.nf(false);
     }
+
     private void otir() { // ZUM(283-284) HTP(364-365)
         outi();
-        if (!state.zf()) {
-            state.pc(state.pc()-2); // repeat the instruction.
-        }
+        if (!state.zf()) {state.pc(state.pc() - 2);} // repeat the instruction.
     }
+
     private void outd() { // ZUM(285) HTP(369-370)
         bus.cpuWritePortByte(state.bc(), bus.cpuReadMemByte(state.hl()));
         state.b(state.b() - 1);
@@ -1091,11 +1082,10 @@ public final class Core {
         state.zf(state.b() == 0);
         state.nf(true);
     }
+
     private void otdr() { // ZUM(286-287) HTP(362-363)
         outd();
-        if (!state.zf()) {
-            state.pc(state.pc()-2); // repeat the instruction.
-        }
+        if (!state.zf()) {state.pc(state.pc() - 2);} // repeat the instruction.
     }
 
     // ------------------------------------------------------------------
@@ -1166,7 +1156,7 @@ public final class Core {
      * Arithmetic and logical operations that involve the accumulator (or `A` register).
      *
      * @param opCode bits 3-5 determine which operation to select.
-     * @param n the parameter to the operation that is not the `A` register.
+     * @param n      the parameter to the operation that is not the `A` register.
      */
     private void alu_acc_n(int opCode, int n) {
         switch ((opCode & 0x38) >> 3) {
@@ -1185,7 +1175,7 @@ public final class Core {
      * Shift and rotate operations that involve 8 bit values.
      *
      * @param opCode bits 3-5 determine which operation to select.
-     * @param n the parameter to the operation.
+     * @param n      the parameter to the operation.
      * @return the result of performing the operation on the parameter.
      */
     private int shf_rot_n(int opCode, int n) {
@@ -1198,7 +1188,7 @@ public final class Core {
             case 0x05/*SRA n*/ -> sra_n(n); // ZUM(214-216) HTP(430-431)
             case 0x06/*SL1 n*/ -> sl1_n(n); // undocumented
             case 0x07/*SRL n*/ -> srl_n(n); // ZUM(217-219) HTP(432-433)
-            default -> throw new IllegalStateException("Unexpected value in shf_rot switch: " + ((opCode & 0x38) >> 3));
+            default -> 0; // unreachable
         };
     }
 
@@ -1229,8 +1219,9 @@ public final class Core {
      * @param rrSet IntConsumer for 16-bit register in question
      */
     private void high(IntSupplier rrGet, IntConsumer rrSet, int n) {
-        rrSet.accept(((n & 0xFF) << 8 )| (rrGet.getAsInt() & 0xFF));
+        rrSet.accept(((n & 0xFF) << 8) | (rrGet.getAsInt() & 0xFF));
     }
+
     /**
      * Set the LSB (byte) in the 16-bit value.
      *
@@ -1247,7 +1238,7 @@ public final class Core {
      * this function during instruction decoding.
      */
     private int indexed(int nn) {
-        return (nn + (int)(byte)bus.cpuReadMemByte(state.pcInc1())) & 0xFFFF;
+        return (nn + (int) (byte) bus.cpuReadMemByte(state.pcInc1())) & 0xFFFF;
     }
 
     /**
