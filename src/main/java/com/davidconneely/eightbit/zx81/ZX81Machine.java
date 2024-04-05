@@ -101,11 +101,10 @@ public class ZX81Machine {
             } else if (ch06 >= 28 && ch06 <= 37) { // 0-9
                 sb.append((char) (ch06 - 28 + '0'));
             } else {
-                sb.append(switch (ch06) {
+                sb.append(switch (ch06) { // no '.' or '/' to avoid escaping resources folder
                     case 16 -> '(';
                     case 17 -> ')';
                     case 22 -> '-';
-                    case 27 -> '.';
                     default -> '_';
                 });
             }

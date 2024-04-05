@@ -16,20 +16,25 @@ An emulator for the Zilog Z80 8-bit CPU, to allow machine emulation of the Sincl
 
 ### Limitations of the ZX81 machine emulation
 
+- The ZX81 ROM file should be placed at `src/main/resources/z80/zx81/zx81.rom`, and any program files you would like to
+  be able to load should be located in `src/main/resources/z80/zx81/` with a lowercase filename and the file extension
+  `.p`. To avoid issues with redistribution rights, these are not published to the GitHub repository. If I can get
+  confirmation that these files are redistributable, this may change.
+- The emulator provides for `LOAD` of the `.p` files by typing `LOAD "MYSAVEDFILE"` in the emulator to load the resource
+  `/z80/zx81/mysavedfile.p` from the classpath as a saved program. There is no corresponding `SAVE` command.
 - There can be issues with the keyboard. This affects games which don't scan the keyboard themselves nor wait for input
   using the standard routines (but rely solely on the interrupt-based screen display to update the system variables).
-- There is `LOAD` but no `SAVE` (and `LOAD` requires the filename to be specified - it should be a classpath resource
-  named like `/z80/zx81/mygame.p` to be loadable as `LOAD "MYGAME"` in the emulator).
 - There is no `SLOW` or `FAST` mode. The machine likely thinks it is a ZX81 ROM running on ZX80 hardware because it
   will not see the NMI generator when it looks for it, but the display is updated about 50 times per second by "ghost
   hardware" that runs outside of the machine emulation.
 - Timing is achieved using a `Thread.sleep(1)` every few hundred instruction steps, to emulate about 95 instructions
   per millisecond (yep, that's how slow a `SLOW` mode ZX81 would be). It should be done using T-states and cycles
-  rather than instructions - but in practice, it seems OK.
-- The display is terminal-based, so there's no way high-resolution graphics can work on it (even if it wasn't, ZX81
-  HRG or pseudo-HRG requires cycle-level timing to work, which the underlying Z80 emulation does not have).
-- The Unicode "Symbols for Legacy Computing" block (added in Unicode 16.0) is not well-supported by fonts, so you'll
-  notice that the half-grey graphic symbols may appear as question marks in a diamond in the following screenshot.
+  rather than instructions - but in practice, it seems OK. Without this, most games are utterly unplayable.
+- The display is terminal-based, so it cannot support high-resolution graphics (even if the display were pixel-based,
+  ZX81 pseudo-HRG requires CPU cycle-level timing to work, which the CPU emulation does not currently support).
+- The Unicode ["Symbols for Legacy Computing" block](https://www.unicode.org/charts/PDF/U1FB00.pdf) is not
+  well-supported by fonts, so the half-grey graphic symbols (U+1FB8E and U+1FB8F and their inverted counterparts) may
+  appear as the unknown glyph symbol (e.g. question mark in a diamond). 
 - I've only provided an implementation of the `TerminalSupport` interface for Windows, but it should be straightforward
   to add Linux or macOS implementations. Also, I've not worried about supporting old versions of Windows: you'll need
   a version of Windows (likely a recent build of Windows 10 or Windows 11) that supports UTF-8 console, and virtual
