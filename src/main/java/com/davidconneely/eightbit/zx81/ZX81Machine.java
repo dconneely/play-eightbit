@@ -44,8 +44,10 @@ public class ZX81Machine {
     }
 
     private void run() throws IOException {
+        long startup = System.currentTimeMillis();
         long instructions = 0L;
-        long lastRender = System.currentTimeMillis();
+        long frames = 0L;
+        long lastRender = startup;
         core.state().pc(0);
         while (true) {
             core.step();
@@ -59,20 +61,21 @@ public class ZX81Machine {
                     core.state().pc(bus.cpuReadMemWord(core.state().spInc2()));
                 }
             }
-            if (pc > 0x7FFF) { // we're probably waiting on user input.
-                long now = System.currentTimeMillis();
-                display.renderDFile(bus);
-                lastRender = now;
+            if (pc > 0x7FFF) { // executing display file, we're probably waiting on user input.
                 // effective RET.
                 core.state().pc(bus.cpuReadMemWord(core.state().spInc2()));
-                continue;
             }
-            if ((instructions & 0x1FFFFF) == 0L) { // check about every 2.1 million instructions executed if >= 20ms.
-                long now = System.currentTimeMillis();
-                if (now - lastRender >= 20L) {
-                    display.renderDFile(bus);
-                    lastRender = now;
-                }
+            long now = System.currentTimeMillis();
+            if (now - lastRender >= 19L) {
+                ++frames;
+                display.state1("PC=0x%04x  |%6.1f kIPS  |%6.1f fps".formatted(pc, instructions * 1.0 / (now - startup), frames * 1000.0 / (now - startup)));
+                display.renderDFile(bus);
+                lastRender = now;
+            }
+            // Z80 at 3.25MHz, assuming 0.145 instr/cycle, gives 0.47125 MIPS.
+            // Slow mode spends 80% of time in display code, so adjust 275L below until you get around for 94.25 instr/ms.
+            if (instructions % 275L == 0L) {
+                try {Thread.sleep(1);} catch (InterruptedException ex) {/*do nothing.*/}
             }
         }
     }

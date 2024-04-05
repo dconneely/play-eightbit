@@ -3,7 +3,8 @@ package com.davidconneely.eightbit.zx81;
 import com.davidconneely.eightbit.IBus;
 
 public class TerminalDisplay {
-    private final int[] codepoints = {
+    private static final int LEN_STATE = 68;
+    private static final int[] codepoints = {
             ' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛',
             '▒', 0x1FB8F, 0x1FB8E, '"', '£', '$', ':', '?',
             '(', ')', '>', '<', '=', '+', '-', '*',
@@ -15,6 +16,7 @@ public class TerminalDisplay {
     };
 
     private final TerminalSupport terminal;
+    private String state1 = sanitizeState(null), state2 = sanitizeState(null);
 
     public TerminalDisplay(TerminalSupport terminal) {
         this.terminal = terminal;
@@ -24,14 +26,38 @@ public class TerminalDisplay {
      * Call this before starting the display to prepare it for use.
      */
     public void init() {
-        terminal.print("\u001b[?25l\u001b[?1049h"); // hide the cursor, use the alternate buffer.
+        terminal.print("\u001B[?25l\u001B[?1049h"); // hide the cursor, use the alternate buffer.
     }
 
     /**
      * Call this after using the display to release and reset it.
      */
     public void reset() {
-        terminal.print("\u001b[?1049l\u001b[?25h\u001b[0m"); // switch back to the normal buffer, show the cursor again, reset display attributes.
+        terminal.print("\u001B[?1049l\u001B[?25h\u001B[0m"); // switch back to the normal buffer, show the cursor again, reset display attributes.
+    }
+
+    public void state1(String state) {
+        this.state1 = sanitizeState(state);
+    }
+
+    public void state2(String state) {
+        this.state2 = sanitizeState(state);
+    }
+
+    private static String sanitizeState(String state) {
+        StringBuilder sb = new StringBuilder(LEN_STATE);
+        if (state != null) {
+            for (int i = 0; i < state.length() && i < LEN_STATE; ++i) {
+                int ch = state.charAt(i);
+                if (ch >= 0x20 && ch <= 0x7E) {
+                    sb.append((char) ch);
+                }
+            }
+        }
+        while (sb.length() < LEN_STATE) {
+            sb.append(' ');
+        }
+        return sb.toString();
     }
 
     /**
@@ -42,16 +68,23 @@ public class TerminalDisplay {
      */
     public void renderDFile(final IBus bus) {
         int address = bus.cpuReadMemWord(0x400C); // value of D_FILE
-        if (bus.cpuReadMemByte(address) == 0x76) {
-            ++address; // skip the initial `HALT`.
+        int ch = bus.cpuReadMemByte(address);
+        if ((ch & 0x40) != 0) { // skip any initial byte with bit6 set (usually 0x76 = `HALT`)
+            ++address;
         }
-        terminal.print("\u001b[H\u001b#6\u001b[7m                                  \u001b[27m\u001b[K\r\n"); // move to home, double-width row/line, top margin (34 spaces), erase to end of line, CR-LF.
+        terminal.print("\u001B[H\u001B#6 \u001b[38;5;242msinclair \u001b[38;5;202mZX81\u001B[0m\u001B[K\r\n");
+        terminal.print("\u001B#6\u001b[38;5;231m╭──────────────────────────────────╮\u001B[0m\u001B[K\r\n");
+        terminal.print("\u001B#6\u001b[38;5;231m│\u001B[38;5;195m\u001B[7m                                  \u001B[27m\u001B[38;5;231m│\u001B[0m\u001B[K\n");
         for (int i = 0; i < 24; ++i) {
+            terminal.print("\u001B#6\u001b[38;5;231m│\u001B[38;5;195m\u001B[7m ");
             address = renderLine(bus, address);
-            terminal.write('\r');
-            terminal.write('\n');
+            terminal.print(" \u001B[27m\u001b[38;5;231m│\u001B[0m\u001B[K\r\n");
         }
-        terminal.print("\u001b#6\u001b[7m                                  \u001b[27m\u001b[K\r\n"); // double-width row/line, bottom margin (34 spaces), erase to end of line, CR-LF.
+        terminal.print("\u001B#6\u001b[38;5;231m│\u001B[38;5;195m\u001B[7m                                  \u001B[27m\u001B[38;5;231m│\u001B[0m\u001B[K\n");
+        terminal.print("\u001B#6\u001b[38;5;231m╰──────────────────────────────────╯\u001B[0m\u001B[K\r\n");
+        // 68 x 2 character status area under the main screen area.
+        terminal.print("  " + state1 + "  \u001B[0m\u001B[K\r\n");
+        terminal.print("  " + state2 + "  \u001B[0m\u001B[K");
     }
 
     /**
@@ -63,27 +96,26 @@ public class TerminalDisplay {
      * @return int address to continue next line from.
      */
     private int renderLine(final IBus bus, int address) {
-        terminal.print("\u001b#6\u001b[7m "); // double-width row/line, left margin (one space).
         boolean inverted = true;
         int column = 0;
         while (column < 33) {
             int ch = bus.cpuReadMemByte(address++);
-            if ((ch & 0x40) != 0 || column == 32) break; // end translation if bit6 set, or line is too long.
+            if ((ch & 0x40) != 0 || column == 32) break; // end translation if bit6 set (usually 0x76 = `HALT`), or line is too long.
             boolean inverse = (ch & 0x80) == 0; // inverse video if bit7 set.
             if (inverted != inverse) {
-                terminal.print(inverse ? "\u001b[7m" : "\u001b[27m");
+                terminal.print(inverse ? "\u001B[7m" : "\u001B[27m");
                 inverted = inverse;
             }
             writeCodepoint(codepoints[ch & 0x3F]);
             ++column;
         }
         if (!inverted) {
-            terminal.print("\u001b[7m");
+            terminal.print("\u001B[7m");
         }
         while (column < 32) { // only used with collapsed display file.
             terminal.write(' ');
+            ++column;
         }
-        terminal.print(" \u001b[27m\u001b[K"); // right margin (one space), reset inverse, erase to end of line.
         return address;
     }
 

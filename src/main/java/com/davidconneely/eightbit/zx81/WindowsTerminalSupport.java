@@ -3,6 +3,9 @@ package com.davidconneely.eightbit.zx81;
 import org.fusesource.jansi.internal.JansiLoader;
 
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 
 import static org.fusesource.jansi.internal.Kernel32.*;
 import static org.fusesource.jansi.internal.Kernel32.INPUT_RECORD.KEY_EVENT;
@@ -14,6 +17,7 @@ public class WindowsTerminalSupport implements TerminalSupport {
     private final int originalConsoleModeInput;
     private final int originalConsoleModeOutput;
     private final int originalConsoleOutputCP;
+    private final PrintStream originalSystemOut;
 
     static {
         JansiLoader.initialize();
@@ -30,6 +34,7 @@ public class WindowsTerminalSupport implements TerminalSupport {
         GetConsoleMode(handleConsoleOutput, mode);
         originalConsoleModeOutput = mode[0];
         originalConsoleOutputCP = GetConsoleOutputCP();
+        originalSystemOut = System.out;
     }
 
     /**
@@ -49,6 +54,10 @@ public class WindowsTerminalSupport implements TerminalSupport {
             SetConsoleMode(handleConsoleOutput, (mode[0] | 0x5) & ~0x2);
         }
         SetConsoleOutputCP(65001); // UTF-8
+        if (!StandardCharsets.UTF_8.equals(System.out.charset())) {
+            var utf8 = new PrintStream(System.out, true, StandardCharsets.UTF_8);
+            System.setOut(utf8);
+        }
     }
 
     @Override
@@ -56,6 +65,7 @@ public class WindowsTerminalSupport implements TerminalSupport {
         SetConsoleMode(handleConsoleInput, originalConsoleModeInput);
         SetConsoleMode(handleConsoleOutput, originalConsoleModeOutput);
         SetConsoleOutputCP(originalConsoleOutputCP);
+        System.setOut(originalSystemOut);
     }
 
 
