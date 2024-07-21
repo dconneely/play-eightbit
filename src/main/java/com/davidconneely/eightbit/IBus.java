@@ -19,10 +19,10 @@ public interface IBus {
     // ------------------------------------------------------------------------------------------------------
 
     /**
-     * Read a byte of data from memory (with CPU side-effects, specifically during M1 machine cycle).
+     * Read a byte of data from memory (with CPU side effects, specifically during M1 machine cycle).
      * To be used by the emulator when emulating CPU memory access.
      * <p>
-     * The Z80 CPU has a pinout that indicates that a read is taking place in the M1 machine cycle, so it is a read of
+     * The Z80 CPU has a pin-out that indicates that a read is taking place in the M1 machine cycle, so it is a read of
      * an instruction op-code to be decoded by the CPU. Some hardware (e.g. ZX81) uses this to change the memory read
      * behaviour for instructions (but not for data) at some addresses.
      * <p>
@@ -38,7 +38,7 @@ public interface IBus {
     }
 
     /**
-     * Read a byte of data from memory (with CPU side-effects, not during M1 machine cycle).
+     * Read a byte of data from memory (with CPU side effects, not during M1 machine cycle).
      * To be used by the emulator when emulating CPU memory access.
      *
      * @param address 16-bit memory address.
@@ -49,7 +49,7 @@ public interface IBus {
     }
 
     /**
-     * Read a word of data from memory (with CPU side-effects, not during M1 machine cycle).
+     * Read a word of data from memory (with CPU side effects, not during M1 machine cycle).
      * To be used by the emulator when emulating CPU memory access.
      *
      * @param address 16-bit memory address.
@@ -60,7 +60,7 @@ public interface IBus {
     }
 
     /**
-     * Read a byte of data from I/O port (with CPU side-effects).
+     * Read a byte of data from I/O port (with CPU side effects).
      * To be used by the emulator when emulating CPU I/O access.
      * <p>
      * Z80 assembly language encourages you to consider only bottom 8 bits, but `IN A, (n)` actually reads from the
@@ -78,7 +78,7 @@ public interface IBus {
     }
 
     /**
-     * Write a byte of data to memory (with CPU side-effects).
+     * Write a byte of data to memory (with CPU side effects).
      * To be used by the emulator when emulating CPU memory access.
      *
      * @param address 16-bit memory address.
@@ -89,7 +89,7 @@ public interface IBus {
     }
 
     /**
-     * Write a word of data to memory (with CPU side-effects).
+     * Write a word of data to memory (with CPU side effects).
      * To be used by the emulator when emulating CPU memory access.
      *
      * @param address 16-bit memory address.
@@ -101,7 +101,7 @@ public interface IBus {
     }
 
     /**
-     * Write a byte of data to an I/O port (with CPU side-effects).
+     * Write a byte of data to an I/O port (with CPU side effects).
      * To be used by the emulator when emulating CPU I/O access.
      * <p>
      *
@@ -117,7 +117,7 @@ public interface IBus {
     // ----------------------------------------------------------------------------------------------
 
     /**
-     * Read a byte of data from memory (without CPU side-effects).
+     * Read a byte of data from memory (without CPU side effects).
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
      *
      * @param address 16-bit memory address.
@@ -126,7 +126,7 @@ public interface IBus {
     /* abstract */ int rawReadMemByte(int address);
 
     /**
-     * Read an array of data from memory (without CPU side-effects).
+     * Read an array of data from memory (without CPU side effects).
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
      *
      * @param address 16-bit memory address.
@@ -139,7 +139,7 @@ public interface IBus {
     }
 
     /**
-     * Read a byte of data from I/O port (without CPU side-effects).
+     * Read a byte of data from I/O port (without CPU side effects).
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
      *
      * @param portNum 16-bit port number.
@@ -150,7 +150,7 @@ public interface IBus {
     }
 
     /**
-     * Write a byte of data into memory (without CPU side-effects).
+     * Write a byte of data into memory (without CPU side effects).
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
      *
      * @param address 16-bit memory address.
@@ -159,7 +159,7 @@ public interface IBus {
     /* abstract */ void rawWriteMemByte(int address, int data);
 
     /**
-     * Write an array of data into memory (without CPU side-effects).
+     * Write an array of data into memory (without CPU side effects).
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
      *
      * @param address 16-bit memory address.
@@ -172,7 +172,7 @@ public interface IBus {
     }
 
     /**
-     * Write a byte of data to an I/O port (without CPU side-effects).
+     * Write a byte of data to an I/O port (without CPU side effects).
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
      * <p>
      *

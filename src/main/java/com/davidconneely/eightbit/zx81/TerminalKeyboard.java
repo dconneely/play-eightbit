@@ -7,8 +7,7 @@ import java.util.Map;
  * can't be done from Java without the use of native code or executing an external process.
  */
 public class TerminalKeyboard {
-    record Key(int highPort, int data, boolean isShifted) {
-    }
+    record Key(int highPort, int data, boolean isShifted) {}
 
     private static final Map<Character, Key> KEY_MAP = Map.<Character, Key>ofEntries(
             Map.entry('1', new Key(0xF7, 0xFE, false)),
@@ -148,14 +147,8 @@ public class TerminalKeyboard {
         if (ch == 3) { // exit on Ctrl+C
             throw new ShutdownException("Closing emulator because Ctrl+C pressed");
         }
-        Key tmp = KEY_MAP.get((char) ch);
-        if (tmp != null) {
-            lastKeyTime = now;
-            lastKey = tmp;
-        } else {
-            lastKeyTime = now;
-            lastKey = null;
-        }
+        lastKeyTime = now;
+        lastKey = KEY_MAP.get((char) ch);
     }
 
     public int readKeyPortByte(int portNum) {

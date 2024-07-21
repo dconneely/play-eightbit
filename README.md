@@ -11,7 +11,7 @@ An emulator for the Zilog Z80 8-bit CPU, to allow machine emulation of the Sincl
 - Instruction timing, T-states, machine-cycles are not currently implemented. Each instruction runs as fast as the JVM
   can execute it, which is completely unrelated to the timing on a real Z80.
 - Although, ironically, most undocumented instructions had to be implemented to get the `zexdoc` tests to pass,
-  the condition bits 3 and 5 (also know as flags X and Y) are not currently implemented.
+  the condition bits 3 and 5 (also known as flags X and Y) are not currently implemented.
 - The `zexdoc` tests don't test interrupt or I/O instructions, so there could be unexpected issues in these areas.
 
 ### Limitations of the ZX81 machine emulation
@@ -26,7 +26,7 @@ An emulator for the Zilog Z80 8-bit CPU, to allow machine emulation of the Sincl
   using the standard routines (but rely solely on the interrupt-based screen display to update the system variables).
 - There is no `SLOW` or `FAST` mode. The machine likely thinks it is a ZX81 ROM running on ZX80 hardware because it
   will not see the NMI generator when it looks for it, but the display is updated about 50 times per second by "ghost
-  hardware" that runs outside of the machine emulation.
+  hardware" that runs outside the machine emulation.
 - Timing is achieved using a `Thread.sleep(1)` every few hundred instruction steps, to emulate about 95 instructions
   per millisecond (yep, that's how slow a `SLOW` mode ZX81 would be). It should be done using T-states and cycles
   rather than instructions - but in practice, it seems OK. Without this, most games are utterly unplayable.

@@ -22,9 +22,9 @@ public final class Core {
         decode(bus.cpuReadMemInstr(state.pc()));
     }
 
-    // -----------------------------------------------------------------------
-    // ---------- unprefixed op-codes: general-purpose instructions ----------
-    // -----------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+    // ---------- un-prefixed op-codes: general-purpose instructions ----------
+    // ------------------------------------------------------------------------
 
     // Decode (00xC0-0xFF) op-codes: general-purpose instructions.
     private void decode(int opCode) {

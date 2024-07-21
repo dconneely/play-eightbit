@@ -13,7 +13,7 @@ public class ZX81Machine {
     private final Core core;
 
     ZX81Machine() {
-        this.terminal = WindowsTerminalSupport.INSTANCE;
+        this.terminal = TerminalSupport.get();
         this.display = new TerminalDisplay(terminal);
         this.keyboard = new TerminalKeyboard(terminal);
         this.bus = new ZX81Bus(this.keyboard);

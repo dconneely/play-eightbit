@@ -4,14 +4,23 @@ import org.fusesource.jansi.internal.JansiLoader;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
-import static org.fusesource.jansi.internal.Kernel32.*;
+import static org.fusesource.jansi.internal.Kernel32.GetConsoleMode;
+import static org.fusesource.jansi.internal.Kernel32.GetConsoleOutputCP;
+import static org.fusesource.jansi.internal.Kernel32.GetNumberOfConsoleInputEvents;
+import static org.fusesource.jansi.internal.Kernel32.GetStdHandle;
+import static org.fusesource.jansi.internal.Kernel32.INPUT_RECORD;
 import static org.fusesource.jansi.internal.Kernel32.INPUT_RECORD.KEY_EVENT;
+import static org.fusesource.jansi.internal.Kernel32.KEY_EVENT_RECORD;
+import static org.fusesource.jansi.internal.Kernel32.STD_INPUT_HANDLE;
+import static org.fusesource.jansi.internal.Kernel32.STD_OUTPUT_HANDLE;
+import static org.fusesource.jansi.internal.Kernel32.SetConsoleMode;
+import static org.fusesource.jansi.internal.Kernel32.SetConsoleOutputCP;
+import static org.fusesource.jansi.internal.Kernel32.readConsoleInputHelper;
 
-public class WindowsTerminalSupport implements TerminalSupport {
-    public static final WindowsTerminalSupport INSTANCE;
+class WindowsTerminalSupport implements TerminalSupport {
+    static final WindowsTerminalSupport INSTANCE;
     private final long handleConsoleInput;
     private final long handleConsoleOutput;
     private final int originalConsoleModeInput;
