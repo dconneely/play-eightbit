@@ -19,8 +19,8 @@ import static org.fusesource.jansi.internal.Kernel32.SetConsoleMode;
 import static org.fusesource.jansi.internal.Kernel32.SetConsoleOutputCP;
 import static org.fusesource.jansi.internal.Kernel32.readConsoleInputHelper;
 
-class WindowsTerminalSupport implements TerminalSupport {
-    static final WindowsTerminalSupport INSTANCE;
+class WindowsTerminalSupport extends TerminalSupport {
+    private static final WindowsTerminalSupport INSTANCE;
     private final long handleConsoleInput;
     private final long handleConsoleOutput;
     private final int originalConsoleModeInput;
@@ -31,6 +31,10 @@ class WindowsTerminalSupport implements TerminalSupport {
     static {
         JansiLoader.initialize();
         INSTANCE = new WindowsTerminalSupport();
+    }
+
+    static WindowsTerminalSupport instance() {
+        return INSTANCE;
     }
 
     // private to prevent other classes instantiating this.

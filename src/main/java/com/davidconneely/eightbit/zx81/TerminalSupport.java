@@ -2,13 +2,13 @@ package com.davidconneely.eightbit.zx81;
 
 import java.util.Locale;
 
-public interface TerminalSupport {
+public abstract class TerminalSupport {
     static TerminalSupport get() {
         String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         if (osName.startsWith("windows")) {
-            return WindowsTerminalSupport.INSTANCE;
-        //} else if (osName.startsWith("mac")) {
-        //    return MacOsTerminalSupport.INSTANCE;
+            return WindowsTerminalSupport.instance();
+        } else if (osName.startsWith("mac")) {
+            return MacOsTerminalSupport.instance();
         //} else if (osName.startsWith("linux")) {
         //    return LinuxTerminalSupport.INSTANCE;
         } else {
@@ -16,13 +16,13 @@ public interface TerminalSupport {
         }
     }
 
-    void enableRawMode();
+    abstract void enableRawMode();
 
-    void reset();
+    abstract void reset();
 
-    int read();
+    abstract int read();
 
-    void write(int data);
+    abstract void write(int data);
 
-    void print(String text);
+    abstract void print(String text);
 }

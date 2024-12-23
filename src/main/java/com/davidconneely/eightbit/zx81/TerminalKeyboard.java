@@ -83,6 +83,7 @@ public class TerminalKeyboard {
             Map.entry('L', new Key(0xBF, 0xFD, true)),
             Map.entry('=', new Key(0xBF, 0xFD, true)), // additional, '='
             Map.entry('\r', new Key(0xBF, 0xFE, false)), // Enter key for NEWLINE
+            Map.entry('\n', new Key(0xBF, 0xFE, false)), // Enter key for NEWLINE
             Map.entry('\u0006', new Key(0xBF, 0xFE, true)), // Ctrl+F for FUNCTION mode
             Map.entry('\t', new Key(0xFE, 0xFE, false)), // Tab key for SHIFT (by itself)
             Map.entry('z', new Key(0xFE, 0xFD, false)),
