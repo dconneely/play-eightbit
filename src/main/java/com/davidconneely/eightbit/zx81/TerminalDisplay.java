@@ -2,7 +2,7 @@ package com.davidconneely.eightbit.zx81;
 
 import com.davidconneely.eightbit.IBus;
 
-public class TerminalDisplay {
+class TerminalDisplay {
     private static final int LEN_STATE = 68;
     private static final int[] codepoints = {
             ' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛',
@@ -18,33 +18,33 @@ public class TerminalDisplay {
     private final TerminalSupport terminal;
     private String state1 = sanitizeState(null), state2 = sanitizeState(null);
 
-    public TerminalDisplay(TerminalSupport terminal) {
+    TerminalDisplay(final TerminalSupport terminal) {
         this.terminal = terminal;
     }
 
     /**
      * Call this before starting the display to prepare it for use.
      */
-    public void init() {
+    void init() {
         terminal.print("\u001B[?25l\u001B[?1049h"); // hide the cursor, use the alternate buffer.
     }
 
     /**
      * Call this after using the display to release and reset it.
      */
-    public void reset() {
+    void reset() {
         terminal.print("\u001B[?1049l\u001B[?25h\u001B[0m"); // switch back to the normal buffer, show the cursor again, reset display attributes.
     }
 
-    public void state1(String state) {
+    void state1(final String state) {
         this.state1 = sanitizeState(state);
     }
 
-    public void state2(String state) {
+    void state2(final String state) {
         this.state2 = sanitizeState(state);
     }
 
-    private static String sanitizeState(String state) {
+    private static String sanitizeState(final String state) {
         StringBuilder sb = new StringBuilder(LEN_STATE);
         if (state != null) {
             for (int i = 0; i < state.length() && i < LEN_STATE; ++i) {
@@ -66,7 +66,7 @@ public class TerminalDisplay {
      *
      * @param bus interface to read bytes from the display file.
      */
-    public void renderDFile(final IBus bus) {
+    void renderDFile(final IBus bus) {
         int address = bus.cpuReadMemWord(0x400C); // value of D_FILE
         int ch = bus.cpuReadMemByte(address);
         if ((ch & 0x40) != 0) { // skip any initial byte with bit6 set (usually 0x76 = `HALT`)
@@ -124,7 +124,7 @@ public class TerminalDisplay {
      *
      * @param codepoint the Unicode codepoint to write as a set of UTF-8 bytes to the stream.
      */
-    private void writeCodepoint(int codepoint) {
+    private void writeCodepoint(final int codepoint) {
         if (codepoint <= 0x7F) /* 7-bits */ {
             terminal.write(codepoint);
         } else if (codepoint <= 0x7FF) /* 5-bits,6-bits */ {

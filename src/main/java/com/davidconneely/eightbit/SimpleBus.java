@@ -5,30 +5,30 @@ public class SimpleBus implements IBus {
     private final byte[] memory = new byte[MEMORY_SIZE];
 
     @Override
-    public int rawReadMemByte(int address) {
+    public int rawReadMemByte(final int address) {
         checkAddress(address, 1, 0, 1);
         return memory[address] & 0xFF;
     }
 
     @Override
-    public void rawReadMemBytes(int address, byte[] dest, int offset, int length) {
+    public void rawReadMemBytes(final int address, final byte[] dest, final int offset, final int length) {
         checkAddress(address, dest.length, offset, length);
         System.arraycopy(memory, address, dest, offset, length);
     }
 
     @Override
-    public void rawWriteMemByte(int address, int data) {
+    public void rawWriteMemByte(final int address, final int data) {
         checkAddress(address, 1, 0, 1);
         memory[address] = (byte) (data & 0xFF);
     }
 
     @Override
-    public void rawWriteMemBytes(int address, byte[] source, int offset, int length) {
+    public void rawWriteMemBytes(final int address, final byte[] source, final int offset, final int length) {
         checkAddress(address, source.length, offset, length);
         System.arraycopy(source, offset, memory, address, length);
     }
 
-    private void checkAddress(int address, int arrayLen, int offset, int length) {
+    private void checkAddress(final int address, final int arrayLen, final int offset, final int length) {
         if (address < 0 || offset < 0 || length < 0
                 || address >= MEMORY_SIZE || length > MEMORY_SIZE || address + length > MEMORY_SIZE
                 || offset >= arrayLen || offset + length > arrayLen) {

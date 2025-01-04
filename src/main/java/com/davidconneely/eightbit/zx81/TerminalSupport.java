@@ -2,18 +2,23 @@ package com.davidconneely.eightbit.zx81;
 
 import java.util.Locale;
 
-public abstract class TerminalSupport {
-    static TerminalSupport get() {
-        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-        if (osName.startsWith("windows")) {
-            return WindowsTerminalSupport.instance();
-        } else if (osName.startsWith("mac")) {
-            return MacOsTerminalSupport.instance();
-        //} else if (osName.startsWith("linux")) {
-        //    return LinuxTerminalSupport.INSTANCE;
-        } else {
-            return null;
+abstract class TerminalSupport {
+    private static TerminalSupport instance;
+
+    static synchronized TerminalSupport get() {
+        if (instance == null) {
+            final String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+            if (osName.startsWith("windows")) {
+                instance = WindowsTerminalSupport.newInstance();
+            } else if (osName.startsWith("mac") || osName.startsWith("darwin")) {
+                instance = PosixTerminalSupport.newInstance(MacOsTermiosBits::cfmakeraw);
+            }  else if (osName.startsWith("linux")) {
+                instance = PosixTerminalSupport.newInstance(LinuxTermiosBits::cfmakeraw);
+            } else {
+                throw new IllegalStateException("Unsupported operating system: " + osName);
+            }
         }
+        return instance;
     }
 
     abstract void enableRawMode();

@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public final class CringleTest {
+final class CringleTest {
     private static final String PRELIM_RESOURCE = "/z80/cringle/prelim.com";
     private static final String PRELIM_FINISHED = "Preliminary tests complete";
     private static final String ZEXDOC_RESOURCE = "/z80/cringle/zexdoc.com";
@@ -26,7 +26,7 @@ public final class CringleTest {
 
     @Test
     @Order(1)
-    public void testPreliminaries() throws IOException {
+    void testPreliminaries() throws IOException {
         var output = run(PRELIM_RESOURCE);
         int failed = 0;
         if (!output.equals(PRELIM_FINISHED)) {
@@ -41,7 +41,7 @@ public final class CringleTest {
 
     @Test
     @Order(2)
-    public void testDocumentedFlags() throws IOException {
+    void testDocumentedFlags() throws IOException {
         String output = run(ZEXDOC_RESOURCE);
         var lines = output.split("\\r?\\n\\r?"); // test output uses "\n\r" instead of more standard "\n" or "\r\n"
         int failed = 0, passed = 0;
@@ -62,7 +62,7 @@ public final class CringleTest {
     @Test
     @Order(3)
     @Disabled("Skipped because 37/67 tests pass, 30/67 tests fail - undocumented flags not currently implemented")
-    public void testUndocumentedFlags() throws IOException {
+    void testUndocumentedFlags() throws IOException {
         String output = run(ZEXALL_RESOURCE);
         var lines = output.split("\\r?\\n\\r?"); // test output uses "\n\r" instead of more standard "\n" or "\r\n"
         int failed = 0, passed = 0;

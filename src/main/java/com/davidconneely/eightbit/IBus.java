@@ -33,7 +33,7 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @return int 8 bits of data read.
      */
-    default int cpuReadMemInstr(int address) {
+    default int cpuReadMemInstr(final int address) {
         return cpuReadMemByte(address);
     }
 
@@ -44,7 +44,7 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @return int 8 bits of data read.
      */
-    default int cpuReadMemByte(int address) {
+    default int cpuReadMemByte(final int address) {
         return rawReadMemByte(address);
     }
 
@@ -55,7 +55,7 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @return int 16 bits of data read.
      */
-    default int cpuReadMemWord(int address) {
+    default int cpuReadMemWord(final int address) {
         return cpuReadMemByte(address) | (cpuReadMemByte((address + 1) & 0xFFFF) << 8);
     }
 
@@ -73,7 +73,7 @@ public interface IBus {
      * @param portNum 16-bit port number.
      * @return int 8 bits of data read.
      */
-    default int cpuReadPortByte(int portNum) {
+    default int cpuReadPortByte(final int portNum) {
         return rawReadPortByte(portNum);
     }
 
@@ -84,7 +84,7 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @param data    8 bits of data to write.
      */
-    default void cpuWriteMemByte(int address, int data) {
+    default void cpuWriteMemByte(final int address, final int data) {
         rawWriteMemByte(address, data);
     }
 
@@ -95,7 +95,7 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @param data    16 bits of data to write.
      */
-    default void cpuWriteMemWord(int address, int data) {
+    default void cpuWriteMemWord(final int address, final int data) {
         cpuWriteMemByte(address, data & 0xFF);
         cpuWriteMemByte((address + 1) & 0xFFFF, (data & 0xFF00) >>> 8);
     }
@@ -108,7 +108,7 @@ public interface IBus {
      * @param portNum 16-bit port number.
      * @param data    8 bits of data to write.
      */
-    default void cpuWritePortByte(int portNum, int data) {
+    default void cpuWritePortByte(final int portNum, final int data) {
         rawWritePortByte(portNum, data);
     }
 
@@ -132,7 +132,7 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @param dest    array to read the data into.
      */
-    default void rawReadMemBytes(int address, byte[] dest, int offset, int length) {
+    default void rawReadMemBytes(final int address, final byte[] dest, final int offset, final int length) {
         for (int i = 0; i < length; ++i) {
             dest[offset + i] = (byte) rawReadMemByte(address + i);
         }
@@ -142,10 +142,10 @@ public interface IBus {
      * Read a byte of data from I/O port (without CPU side effects).
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
      *
-     * @param portNum 16-bit port number.
+     * @param rawPortNum 16-bit port number.
      * @return int 8 bits of data read.
      */
-    default int rawReadPortByte(int portNum) {
+    default int rawReadPortByte(final int rawPortNum) {
         return 0;
     }
 
@@ -165,7 +165,7 @@ public interface IBus {
      * @param address 16-bit memory address.
      * @param source  array to write the data from.
      */
-    default void rawWriteMemBytes(int address, byte[] source, int offset, int length) {
+    default void rawWriteMemBytes(final int address, final byte[] source, final int offset, final int length) {
         for (int i = 0; i < length; ++i) {
             rawWriteMemByte(address + i, source[offset + i]);
         }
@@ -174,12 +174,11 @@ public interface IBus {
     /**
      * Write a byte of data to an I/O port (without CPU side effects).
      * To be used by the emulator during debugging, etc., rather than emulating the CPU.
-     * <p>
      *
      * @param portNum 16-bit port number.
-     * @param data    8 bits of data to write.
+     * @param data       8 bits of data to write.
      */
-    default void rawWritePortByte(int portNum, int data) {
+    default void rawWritePortByte(final int portNum, final int data) {
         // do nothing.
     }
 }

@@ -42,7 +42,7 @@ final class CpmVerificationMachine implements AutoCloseable {
             }
             try {
                 return in.read();
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 return -1;
             }
         }

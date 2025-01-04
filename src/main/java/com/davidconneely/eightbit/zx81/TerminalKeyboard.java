@@ -6,8 +6,8 @@ import java.util.Map;
  * To be able to emulate the keyboard in a terminal, I think I need to be able to enable terminal input raw mode, which
  * can't be done from Java without the use of native code or executing an external process.
  */
-public class TerminalKeyboard {
-    record Key(int highPort, int data, boolean isShifted) {}
+class TerminalKeyboard {
+    private record Key(int highPort, int data, boolean isShifted) {}
 
     private static final Map<Character, Key> KEY_MAP = Map.<Character, Key>ofEntries(
             Map.entry('1', new Key(0xF7, 0xFE, false)),
@@ -117,7 +117,7 @@ public class TerminalKeyboard {
     private long lastKeyTime;
     private Key lastKey;
 
-    public TerminalKeyboard(TerminalSupport terminal) {
+    TerminalKeyboard(final TerminalSupport terminal) {
         this.terminal = terminal;
     }
 
@@ -136,7 +136,7 @@ public class TerminalKeyboard {
                 }
             }
         }
-        long now = System.currentTimeMillis();
+        final long now = System.currentTimeMillis();
 
         if (ch == -1) {
             if (now - lastKeyTime >= 20L) {
@@ -152,12 +152,12 @@ public class TerminalKeyboard {
         lastKey = KEY_MAP.get((char) ch);
     }
 
-    public int readKeyPortByte(int portNum) {
+    int readKeyPortByte(final int portNum) {
         consumeVTInput();
         if (lastKey == null) {
             return 0xFF;
         }
-        int readFrom = portNum >>> 8;
+        final int readFrom = portNum >>> 8;
         if (lastKey.isShifted() && readFrom == 0xFE) { // handle shift key
             if (lastKey.highPort == 0xFE) {
                 return lastKey.data & 0xFE;

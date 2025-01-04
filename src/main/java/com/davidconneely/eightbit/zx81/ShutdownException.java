@@ -1,7 +1,7 @@
 package com.davidconneely.eightbit.zx81;
 
-class ShutdownException extends RuntimeException {
-    ShutdownException(String message) {
+final class ShutdownException extends RuntimeException {
+    ShutdownException(final String message) {
         super(message);
     }
 }

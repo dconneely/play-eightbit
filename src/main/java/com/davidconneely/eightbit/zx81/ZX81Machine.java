@@ -20,13 +20,13 @@ public class ZX81Machine {
         this.core = new Core(this.bus);
     }
 
-    public static void main(String[] args) throws IOException {
-        ZX81Machine zx81 = new ZX81Machine();
+    public static void main(final String[] args) throws IOException {
+        final ZX81Machine zx81 = new ZX81Machine();
         zx81.loadRom();
         try {
             zx81.init();
             zx81.run();
-        } catch (ShutdownException ex) {
+        } catch (final ShutdownException ex) {
             // do nothing.
         } finally {
             zx81.reset();
@@ -44,7 +44,7 @@ public class ZX81Machine {
     }
 
     private void run() throws IOException {
-        long startup = System.currentTimeMillis();
+        final long startup = System.currentTimeMillis();
         long instructions = 0L;
         long frames = 0L;
         long lastRender = startup;
@@ -52,7 +52,7 @@ public class ZX81Machine {
         while (true) {
             core.step();
             ++instructions;
-            int pc = core.state().pc();
+            final int pc = core.state().pc();
             if (pc == 0x0343) {
                 if (core.state().cf()) {
                     core.state().pc(0x02F4); // LOAD requires a filename in this emulator.
@@ -65,7 +65,7 @@ public class ZX81Machine {
                 // effective RET.
                 core.state().pc(bus.cpuReadMemWord(core.state().spInc2()));
             }
-            long now = System.currentTimeMillis();
+            final long now = System.currentTimeMillis();
             if (now - lastRender >= 19L) {
                 ++frames;
                 display.state1("PC=0x%04x  |%6.1f kIPS  |%6.1f fps".formatted(pc, instructions * 1.0 / (now - startup), frames * 1000.0 / (now - startup)));
@@ -75,7 +75,7 @@ public class ZX81Machine {
             // Z80 at 3.25MHz, assuming 0.145 instr/cycle, gives 0.47125 MIPS.
             // Slow mode spends 80% of time in display code, so adjust 275L below until you get around for 94.25 instr/ms.
             if (instructions % 275L == 0L) {
-                try {Thread.sleep(1);} catch (InterruptedException ex) {/*do nothing.*/}
+                try {Thread.sleep(1);} catch (final InterruptedException ex) {/*do nothing.*/}
             }
         }
     }
