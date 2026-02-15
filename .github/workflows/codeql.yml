@@ -31,7 +31,7 @@ jobs:
         languages: ${{ matrix.language }} # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs; queries: security-extended,security-and-quality
     - uses: actions/setup-java@v5
       with:
-        java-version: "21"
+        java-version: "25"
         distribution: "temurin"
         cache: maven
     - run: "./mvnw -e -B -U -V clean verify"

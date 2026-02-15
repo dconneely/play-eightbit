@@ -14,6 +14,10 @@ class TerminalDisplay {
             'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
             'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
     };
+    private static final int[] codepoints2 = {
+            '█', '▟', '▙', '▄', '▜', '▐', '▚', '▗',
+            0x1FB90, 0x1FB91, 0x1FB92
+    };
 
     private final TerminalSupport terminal;
     private String state1 = sanitizeState(null), state2 = sanitizeState(null);
@@ -101,12 +105,13 @@ class TerminalDisplay {
         while (column < 33) {
             int ch = bus.cpuReadMemByte(address++);
             if ((ch & 0x40) != 0 || column == 32) break; // end translation if bit6 set (usually 0x76 = `HALT`), or line is too long.
-            boolean inverse = (ch & 0x80) == 0; // inverse video if bit7 set.
+            int index = ch & 0x3F;
+            boolean inverse = (ch & 0x80) == 0 || index <= 10; // inverse video unless bit7 set (except for pre-inverted block graphics).
             if (inverted != inverse) {
                 terminal.print(inverse ? "\u001B[7m" : "\u001B[27m");
                 inverted = inverse;
             }
-            writeCodepoint(codepoints[ch & 0x3F]);
+            writeCodepoint(((ch & 0x80) != 0 && index <= 10) ? codepoints2[index] : codepoints[index]);
             ++column;
         }
         if (!inverted) {
