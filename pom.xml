@@ -11,10 +11,10 @@
     <description>Emulate a Zilog Z80 CPU</description>
 
     <properties>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.sourceEncoding>UTF-8</project.reporting.sourceEncoding>
-        <junit.version>6.0.2</junit.version>
+        <junit.version>6.0.3</junit.version>
         <jansi.version>2.4.2</jansi.version>
     </properties>
 
