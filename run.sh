@@ -1,7 +1,7 @@
 #!/bin/sh
 cd "$(dirname "$0")"
 
-JAR_FILE="build/libs/play-eightbit-1.0.0-SNAPSHOT.jar"
+JAR_FILE="build/libs/eightbit-1.0.0-SNAPSHOT.jar"
 
 if [ ! -f "$JAR_FILE" ]; then
     echo "Building project..."

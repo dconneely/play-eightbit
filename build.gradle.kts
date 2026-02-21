@@ -34,6 +34,7 @@ tasks.test {
 }
 
 tasks.jar {
+    archiveBaseName = "eightbit"
     manifest {
         attributes("Main-Class" to "com.davidconneely.eightbit.zx81.ZX81Machine")
     }
