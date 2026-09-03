@@ -1,7 +1,7 @@
 plugins {
     java
     application
-    id("com.diffplug.spotless") version "8.10.0"
+    id("com.diffplug.spotless") version "8.10.1"
 }
 
 group = "com.davidconneely"
