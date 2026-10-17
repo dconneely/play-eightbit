@@ -198,7 +198,7 @@ public final class State {
     pc = nn & 0xFFFF;
   }
 
-  int sp() {
+  public int sp() {
     return sp;
   }
 
@@ -216,7 +216,7 @@ public final class State {
     i = n & 0xFF;
   }
 
-  int r() {
+  public int r() {
     return r06 | (r7 ? 0x80 : 0x00);
   }
 
@@ -227,6 +227,10 @@ public final class State {
 
   void im(final int n) {
     im = (n & 0x03) % 3;
+  }
+
+  public boolean iff1() {
+    return iff1;
   }
 
   void iff1(final boolean t) {
@@ -246,7 +250,7 @@ public final class State {
   }
 
   void halted(final boolean t) {
-    this.halted = true;
+    this.halted = t;
   }
 
   // --- Alternate Registers ---

@@ -21,6 +21,47 @@ public final class Core {
     decode(bus.cpuReadMemInstr(state.pc()));
   }
 
+  /**
+   * Accept a non-maskable interrupt: push the address of the next instruction and jump to $0066.
+   */
+  public void nmi() {
+    state.iff2(state.iff1());
+    state.iff1(false);
+    interrupt(0x0066);
+  }
+
+  /**
+   * Accept a maskable interrupt, if interrupts are enabled. Only interrupt mode 1 is supported:
+   * push the address of the next instruction and jump to $0038.
+   *
+   * @return whether the interrupt was accepted.
+   */
+  public boolean irq() {
+    if (!state.iff1()) {
+      return false;
+    }
+    state.iff1(false);
+    state.iff2(false);
+    interrupt(0x0038);
+    return true;
+  }
+
+  private void interrupt(final int address) {
+    state.rInc();
+    if (state.halted()) {
+      state.halted(false);
+      state.pcInc1(); // continue after the HALT
+    }
+    bus.cpuWriteMemWord(state.spDec2(), state.pc());
+    state.pc(address);
+  }
+
+  /** Fetch the op-code after a prefix, which also increments the `R` register. */
+  private int fetchPrefixed() {
+    state.rInc();
+    return bus.cpuReadMemByte(state.pcInc1());
+  }
+
   // ------------------------------------------------------------------------
   // ---------- un-prefixed op-codes: general-purpose instructions ----------
   // ------------------------------------------------------------------------
@@ -152,7 +193,7 @@ public final class Core {
       case 0xC8 /*RET Z*/ -> ret_t(state.zf()); // ZUM(261-262) HTP(390-391)
       case 0xC9 /*RET*/ -> ret(); // ZUM(260) HTP(388-389)
       case 0xCA /*JP Z,nn*/ -> jp_t(state.zf()); // ZUM(239-240) HTP(282-283)
-      case 0xCB /*[0xCB],...*/ -> decodeCB(bus.cpuReadMemByte(state.pcInc1()));
+      case 0xCB /*[0xCB],...*/ -> decodeCB(fetchPrefixed());
       case 0xCC /*CALL Z,nn*/ -> call_t(state.zf()); // ZUM(257-259) HTP(219-221)
       case 0xCD /*CALL nn*/ -> call(); // ZUM(255-256) HTP(222-223)
       case 0xCE /*ADC A,n*/ ->
@@ -178,8 +219,7 @@ public final class Core {
               bus.cpuReadPortByte(
                   (state.a() << 8) | bus.cpuReadMemByte(state.pcInc1()))); // ZUM(269) HTP(263)
       case 0xDC /*CALL C,nn*/ -> call_t(state.cf()); // ZUM(257-259) HTP(219-221)
-      case 0xDD /*[0xDD],...*/ ->
-          decodeXY(0xDD, bus.cpuReadMemByte(state.pcInc1()), state::ix, state::ix);
+      case 0xDD /*[0xDD],...*/ -> decodeXY(0xDD, fetchPrefixed(), state::ix, state::ix);
       case 0xDE /*SBC A,n*/ ->
           sbc_a_n(bus.cpuReadMemByte(state.pcInc1())); // ZUM(150-151) HTP(420-421)
       case 0xDF /*RST 18H*/ -> rst_n(0x18); // ZUM(267-268) HTP(418-419)
@@ -197,7 +237,7 @@ public final class Core {
       case 0xEA /*JP PE,nn*/ -> jp_t(state.pf()); // ZUM(239-240) HTP(282-283)
       case 0xEB /*EX DE,HL*/ -> ex_de_hl(); // ZUM(122) HTP(249)
       case 0xEC /*CALL PE,nn*/ -> call_t(state.pf()); // ZUM(257-259) HTP(219-221)
-      case 0xED /*[0xED],...*/ -> decodeED(bus.cpuReadMemByte(state.pcInc1()));
+      case 0xED /*[0xED],...*/ -> decodeED(fetchPrefixed());
       case 0xEE /*XOR n*/ -> xor_n(bus.cpuReadMemByte(state.pcInc1()));
       case 0xEF /*RST 28H*/ -> rst_n(0x28); // ZUM(267-268) HTP(418-419)
       case 0xF0 /*RET P*/ -> ret_t(!state.sf()); // ZUM(261-262) HTP(390-391)
@@ -214,8 +254,7 @@ public final class Core {
       case 0xFA /*JP M,nn*/ -> jp_t(state.sf()); // ZUM(239-240) HTP(282-283)
       case 0xFB /*EI*/ -> ei(); // ZUM(175) HTP(247)
       case 0xFC /*CALL M,nn*/ -> call_t(state.sf()); // ZUM(257-259) HTP(219-221)
-      case 0xFD /*[0xFD],...*/ ->
-          decodeXY(0xFD, bus.cpuReadMemByte(state.pcInc1()), state::iy, state::iy);
+      case 0xFD /*[0xFD],...*/ -> decodeXY(0xFD, fetchPrefixed(), state::iy, state::iy);
       case 0xFE /*CP n*/ -> cp_n(bus.cpuReadMemByte(state.pcInc1()));
       case 0xFF /*RST 38H*/ -> rst_n(0x38); // ZUM(267-268) HTP(418-419)
     }
@@ -537,18 +576,16 @@ public final class Core {
   private void decodeXYQ3(int prefix1, int opCode, IntSupplier rrGet, IntConsumer rrSet) {
     switch (opCode) {
       case 0xCB /*[0xDD|0xFD],[0xCB],...*/ -> decodeXYCB(indexed(rrGet.getAsInt()));
-      case 0xDD /*[0xDD|0xFD],[0xDD],...*/ ->
-          decodeXY(0xDD, bus.cpuReadMemByte(state.pcInc1()), state::ix, state::ix);
+      case 0xDD /*[0xDD|0xFD],[0xDD],...*/ -> decodeXY(0xDD, fetchPrefixed(), state::ix, state::ix);
       case 0xE1 /*POP IXY*/ ->
           rrSet.accept(bus.cpuReadMemWord(state.spInc2())); // ZUM(120) HTP(375-376)
-      case 0xED /*[0xDD|0xFD],[0xED],...*/ -> decodeED(bus.cpuReadMemByte(state.pcInc1()));
+      case 0xED /*[0xDD|0xFD],[0xED],...*/ -> decodeED(fetchPrefixed());
       case 0xE3 /*EX (SP),IXY*/ -> ex_csp_rr(rrGet, rrSet); // ZUM(126-127) HTP(252-255)
       case 0xE5 /*PUSH IXY*/ ->
           bus.cpuWriteMemWord(state.spDec2(), rrGet.getAsInt()); // ZUM(117) HTP(381-382)
       case 0xE9 /*JP (IXY)*/ -> state.pc(rrGet.getAsInt()); // ZUM(251) HTP(286)
       case 0xF9 /*LD SP,IXY*/ -> state.sp(rrGet.getAsInt()); // ZUM(114-115) HTP(346-347)
-      case 0xFD /*[0xDD|0xFD],[0xFD],...*/ ->
-          decodeXY(0xFD, bus.cpuReadMemByte(state.pcInc1()), state::iy, state::iy);
+      case 0xFD /*[0xDD|0xFD],[0xFD],...*/ -> decodeXY(0xFD, fetchPrefixed(), state::iy, state::iy);
       default -> nop_(prefix1, opCode);
     }
   }
