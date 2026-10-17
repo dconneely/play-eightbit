@@ -25,7 +25,8 @@ abstract class TerminalSupport {
 
   abstract void reset();
 
-  abstract int read();
+  /** Wait for a key to be typed and read it, or return null at the end of input. */
+  abstract HostKey readKey();
 
   abstract void write(int data);
 

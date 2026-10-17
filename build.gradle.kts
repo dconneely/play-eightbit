@@ -1,5 +1,6 @@
 plugins {
     java
+    `java-test-fixtures`
     application
     id("com.diffplug.spotless") version "8.10.4"
 }
@@ -31,6 +32,13 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.register<JavaExec>("runScript") {
+    description = "Runs the ZX81 emulator with keys typed from a script, and prints the screen."
+    classpath = sourceSets["testFixtures"].runtimeClasspath
+    mainClass = "com.davidconneely.eightbit.zx81.ScriptedZX81"
+    jvmArgs("-Dstdout.encoding=UTF-8")
 }
 
 tasks.jar {

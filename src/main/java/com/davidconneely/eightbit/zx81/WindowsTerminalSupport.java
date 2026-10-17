@@ -2,7 +2,6 @@ package com.davidconneely.eightbit.zx81;
 
 import static org.fusesource.jansi.internal.Kernel32.GetConsoleMode;
 import static org.fusesource.jansi.internal.Kernel32.GetConsoleOutputCP;
-import static org.fusesource.jansi.internal.Kernel32.GetNumberOfConsoleInputEvents;
 import static org.fusesource.jansi.internal.Kernel32.GetStdHandle;
 import static org.fusesource.jansi.internal.Kernel32.INPUT_RECORD;
 import static org.fusesource.jansi.internal.Kernel32.INPUT_RECORD.KEY_EVENT;
@@ -77,10 +76,13 @@ class WindowsTerminalSupport extends TerminalSupport {
     final int[] mode = new int[1];
     final boolean isConsoleIn = GetConsoleMode(handleConsoleInput, mode) != 0;
     if (isConsoleIn) {
+      // Not ENABLE_VIRTUAL_TERMINAL_INPUT, as that loses the key codes and Ctrl state of keys like
+      // Ctrl+1 (it reads as '1'). Keys are decoded by readKey instead.
       SetConsoleMode(
           handleConsoleInput,
-          (mode[0] | ENABLE_VIRTUAL_TERMINAL_INPUT)
-              & ~(ENABLE_PROCESSED_INPUT
+          mode[0]
+              & ~(ENABLE_VIRTUAL_TERMINAL_INPUT
+                  | ENABLE_PROCESSED_INPUT
                   | ENABLE_LINE_INPUT
                   | ENABLE_ECHO_INPUT
                   | ENABLE_WINDOW_INPUT
@@ -108,19 +110,21 @@ class WindowsTerminalSupport extends TerminalSupport {
     System.setOut(originalSystemOut);
   }
 
+  private static final int VK_BACK = 0x08;
+  private static final int VK_LEFT = 0x25;
+  private static final int VK_UP = 0x26;
+  private static final int VK_RIGHT = 0x27;
+  private static final int VK_DOWN = 0x28;
+
+  /** Read the next key press, skipping other input events (including key releases). */
   @Override
-  int read() {
-    final int[] count = new int[1];
+  HostKey readKey() {
     while (true) {
-      GetNumberOfConsoleInputEvents(handleConsoleInput, count);
-      if (count[0] < 1) {
-        return -1;
-      }
       final INPUT_RECORD[] inputRecords;
       try {
-        inputRecords = readConsoleInputHelper(handleConsoleInput, 1, false);
+        inputRecords = readConsoleInputHelper(handleConsoleInput, 1, false); // waits for input
       } catch (final IOException e) {
-        return -1;
+        return null;
       }
       if (inputRecords.length < 1) {
         continue;
@@ -133,8 +137,31 @@ class WindowsTerminalSupport extends TerminalSupport {
       if (!keyEventRecord.keyDown) {
         continue;
       }
-      return keyEventRecord.uchar;
+      return decodeKey(keyEventRecord);
     }
+  }
+
+  private static HostKey decodeKey(final KEY_EVENT_RECORD key) {
+    final int state = key.controlKeyState;
+    final boolean ctrl =
+        (state & (KEY_EVENT_RECORD.LEFT_CTRL_PRESSED | KEY_EVENT_RECORD.RIGHT_CTRL_PRESSED)) != 0;
+    final boolean alt =
+        (state & (KEY_EVENT_RECORD.LEFT_ALT_PRESSED | KEY_EVENT_RECORD.RIGHT_ALT_PRESSED)) != 0;
+    final boolean shift = (state & KEY_EVENT_RECORD.SHIFT_PRESSED) != 0;
+    // Ctrl and Alt together is AltGr, which types characters on some keyboard layouts.
+    if (key.keyCode >= '0' && key.keyCode <= '9' && ctrl != alt && !shift) {
+      return HostKey.of(HostKey.MODIFIED_DIGIT_0 + key.keyCode - '0');
+    }
+    final int ch =
+        switch (key.keyCode) {
+          case VK_LEFT -> '←';
+          case VK_UP -> '↑';
+          case VK_RIGHT -> '→';
+          case VK_DOWN -> '↓';
+          case VK_BACK -> 0x7F;
+          default -> key.uchar;
+        };
+    return new HostKey(ch, ctrl || alt ? 0 : key.keyCode, shift);
   }
 
   @Override

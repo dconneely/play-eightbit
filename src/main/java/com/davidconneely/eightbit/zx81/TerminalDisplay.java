@@ -67,9 +67,17 @@ class TerminalDisplay {
    * Always tries to show 24 lines.
    *
    * @param bus interface to read bytes from the display file.
+   * @param address address of the display file.
+   * @param picture whether the ZX81 is producing a picture; if not (in FAST mode, while a program
+   *     runs), the screen is shown in two close shades of grey, so it looks dimmed.
    */
-  void renderDFile(final IBus bus) {
-    int address = bus.cpuReadMemWord(0x400C); // value of D_FILE
+  void renderDFile(final IBus bus, int address, final boolean picture) {
+    // Reverse video shows the foreground colour as the paper, and the background as the ink.
+    final String paper = picture ? "\u001B[38;5;195m" : "\u001B[38;5;246;48;5;243m";
+    final String blankLine =
+        "\u001B#6\u001b[38;5;231m│"
+            + paper
+            + "\u001B[7m                                  \u001B[27;49m\u001B[38;5;231m│\u001B[0m\u001B[K\n";
     int ch = bus.cpuReadMemByte(address);
     if ((ch & 0x40) != 0) { // skip any initial byte with bit6 set (usually 0x76 = `HALT`)
       ++address;
@@ -78,15 +86,13 @@ class TerminalDisplay {
         "\u001B[H\u001B#6 \u001b[38;5;242msinclair \u001b[38;5;202mZX81\u001B[0m\u001B[K\r\n");
     terminal.print(
         "\u001B#6\u001b[38;5;231m╭──────────────────────────────────╮\u001B[0m\u001B[K\r\n");
-    terminal.print(
-        "\u001B#6\u001b[38;5;231m│\u001B[38;5;195m\u001B[7m                                  \u001B[27m\u001B[38;5;231m│\u001B[0m\u001B[K\n");
+    terminal.print(blankLine);
     for (int i = 0; i < 24; ++i) {
-      terminal.print("\u001B#6\u001b[38;5;231m│\u001B[38;5;195m\u001B[7m ");
+      terminal.print("\u001B#6\u001b[38;5;231m│" + paper + "\u001B[7m ");
       address = renderLine(bus, address);
-      terminal.print(" \u001B[27m\u001b[38;5;231m│\u001B[0m\u001B[K\r\n");
+      terminal.print(" \u001B[27;49m\u001b[38;5;231m│\u001B[0m\u001B[K\r\n");
     }
-    terminal.print(
-        "\u001B#6\u001b[38;5;231m│\u001B[38;5;195m\u001B[7m                                  \u001B[27m\u001B[38;5;231m│\u001B[0m\u001B[K\n");
+    terminal.print(blankLine);
     terminal.print(
         "\u001B#6\u001b[38;5;231m╰──────────────────────────────────╯\u001B[0m\u001B[K\r\n");
     // 68 x 2 character status area under the main screen area.
