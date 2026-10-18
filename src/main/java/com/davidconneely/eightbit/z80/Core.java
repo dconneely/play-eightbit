@@ -78,14 +78,12 @@ public final class Core {
     int qtr = (opCode & 0xC0); // values 0x00|0x40|0x80|0xC0
     switch (qtr) {
       case 0x00 /*[0x00-0x3F]*/ -> decodeQ0(opCode);
-      // `LD r,r'` ZUM(81) HTP(297-298), `LD r,(HL)` ZUM(83) HTP(356-357),
-      // `LD (HL),r` ZUM(86) HTP(303-304)
-      case 0x40 /*[0x40-0x7F]*/ -> setRegister((opCode & 0x38) >>> 3, getRegister(opCode));
-      // `ADD A,r` ZUM(140-141) HTP(201-202), `ADC A,r` ZUM(146-147) HTP(190-191),
-      // `SUB r` ZUM(148-149) HTP(434-435), `SBC A,r` ZUM(150-151) HTP(420-421),
-      // `AND r` ZUM(152-153) HTP(209-210), `XOR r` ZUM(156-157) HTP(436-437),
-      // `OR r` ZUM(154-155) HTP(360-361), `CP r` ZUM(158-159) HTP(225-226)
-      case 0x80 /*[0x80-0xBF]*/ -> alu_acc_n(opCode, getRegister(opCode));
+      case 0x40 /*[0x40-0x7F]*/ -> {
+        setRegister((opCode & 0x38) >>> 3, getRegister(opCode));
+      } /* `LD r,r'` ZUM(81) HTP(297-298), `LD r,(HL)` ZUM(83) HTP(356-357), `LD (HL),r` ZUM(86) HTP(303-304) */
+      case 0x80 /*[0x80-0xBF]*/ -> {
+        alu_acc_n(opCode, getRegister(opCode));
+      } /* `ADD A,r` ZUM(140-141) HTP(201-202), `ADC A,r` ZUM(146-147) HTP(190-191), `SUB r` ZUM(148-149) HTP(434-435), `SBC A,r` ZUM(150-151) HTP(420-421), `AND r` ZUM(152-153) HTP(209-210), `XOR r` ZUM(156-157) HTP(436-437), `OR r` ZUM(154-155) HTP(360-361), `CP r` ZUM(158-159) HTP(225-226) */
       case 0xC0 /*[0xC0-0xFF]*/ -> decodeQ3(opCode);
     }
   }
@@ -266,20 +264,18 @@ public final class Core {
   private void decodeCB(int opCode) {
     int qtr = opCode & 0xC0;
     switch (qtr) {
-      // `RLC r` ZUM(194-195) HTP(400-401), `RRC r` ZUM(205-207) HTP(413-414),
-      // `RL r` ZUM(202-204) HTP(396-397), `RR r` ZUM(208-210) HTP(410-411),
-      // `SLA r` ZUM(211-213) HTP(428-429), `SRA r` ZUM(214-216) HTP(430-431), `SL1 r` undocumented,
-      // `SRL r` ZUM(217-219) HTP(432-433)
-      case 0x00 /*[0xCB],[0x00-0x3F]*/ ->
-          setRegister(opCode, shf_rot_n(opCode, getRegister(opCode)));
-      // `BIT m,r` ZUM(224-225) HTP(217-218), `BIT m,(HL)` ZUM(226-227) HTP(211-212)
-      case 0x40 /*[0xCB],[0x40-0x7F]*/ -> bit_m_n((opCode & 0x38) >>> 3, getRegister(opCode));
-      // `RES m,r` ZUM(236-237) HTP(385-387)
-      case 0x80 /*[0xCB],[0x80-0xBF]*/ ->
-          setRegister(opCode, res_m_n((opCode & 0x38) >>> 3, getRegister(opCode)));
-      // `SET m,r` ZUM(232) HTP(425-427), `SET m,(HL)` ZUM(233) HTP(425-427)
-      case 0xC0 /*[0xCB],[0xC0-0xFF]*/ ->
-          setRegister(opCode, set_m_n((opCode & 0x38) >>> 3, getRegister(opCode)));
+      case 0x00 /*[0xCB],[0x00-0x3F]*/ -> {
+        setRegister(opCode, shf_rot_n(opCode, getRegister(opCode)));
+      } /* `RLC r` ZUM(194-195) HTP(400-401), `RRC r` ZUM(205-207) HTP(413-414), `RL r` ZUM(202-204) HTP(396-397), `RR r` ZUM(208-210) HTP(410-411), `SLA r` ZUM(211-213) HTP(428-429), `SRA r` ZUM(214-216) HTP(430-431), `SL1 r` undocumented, `SRL r` ZUM(217-219) HTP(432-433) */
+      case 0x40 /*[0xCB],[0x40-0x7F]*/ -> {
+        bit_m_n((opCode & 0x38) >>> 3, getRegister(opCode));
+      } /* `BIT m,r` ZUM(224-225) HTP(217-218), `BIT m,(HL)` ZUM(226-227) HTP(211-212) */
+      case 0x80 /*[0xCB],[0x80-0xBF]*/ -> {
+        setRegister(opCode, res_m_n((opCode & 0x38) >>> 3, getRegister(opCode)));
+      } /* `RES m,r` ZUM(236-237) HTP(385-387) */
+      case 0xC0 /*[0xCB],[0xC0-0xFF]*/ -> {
+        setRegister(opCode, set_m_n((opCode & 0x38) >>> 3, getRegister(opCode)));
+      } /* `SET m,r` ZUM(232) HTP(425-427), `SET m,(HL)` ZUM(233) HTP(425-427) */
     }
   }
 
@@ -585,23 +581,20 @@ public final class Core {
     int opCode = bus.cpuReadMemByte(state().pcInc1());
     int qtr = opCode & 0xC0;
     switch (qtr) {
-      // `RLC (IXY+n),r` ZUM(198-201) HTP(404-407), `RRC (IXY+n),r` ZUM(205-207) HTP(413-414),
-      // `RL (IXY+n),r` ZUM(202-204) HTP(396-397), `RR (IXY+n),r` ZUM(208-210) HTP(410-411),
-      // `SLA (IXY+n),r` ZUM(211-213) HTP(428-429), `SRA (IXY+n),r` ZUM(214-216) HTP(430-431),
-      // `SL1 (IXY+n),r` undocumented, `SRL (IXY+n),r` ZUM(217-219) HTP(432-433)
-      case 0x00 /*[0xDD|0xFD],[0xCB],[0x00-0x3F]*/ ->
-          setAdditionalRegister(address, opCode, shf_rot_n(opCode, bus.cpuReadMemByte(address)));
-      // `BIT m,(IXY+n)` ZUM(228-231) HTP(213-216)
-      case 0x40 /*[0xDD|0xFD],[0xCB],[0x40-0x7F]*/ ->
-          bit_m_n((opCode & 0x38) >>> 3, bus.cpuReadMemByte(address));
-      // `RES m,(IXY+n),r` ZUM(236-237) HTP(385-387)
-      case 0x80 /*[0xDD|0xFD],[0xCB],[0x80-0xBF]*/ ->
-          setAdditionalRegister(
-              address, opCode, res_m_n((opCode & 0x38) >>> 3, bus.cpuReadMemByte(address)));
-      // `SET m,(IXY+n),r` ZUM(234-235) HTP(425-427)
-      case 0xC0 /*[0xDD|0xFD],[0xCB],[0xC0-0xFF]*/ ->
-          setAdditionalRegister(
-              address, opCode, set_m_n((opCode & 0x38) >>> 3, bus.cpuReadMemByte(address)));
+      case 0x00 /*[0xDD|0xFD],[0xCB],[0x00-0x3F]*/ -> {
+        setAdditionalRegister(address, opCode, shf_rot_n(opCode, bus.cpuReadMemByte(address)));
+      } /* `RLC (IXY+n),r` ZUM(198-201) HTP(404-407), `RRC (IXY+n),r` ZUM(205-207) HTP(413-414), `RL (IXY+n),r` ZUM(202-204) HTP(396-397), `RR (IXY+n),r` ZUM(208-210) HTP(410-411), `SLA (IXY+n),r` ZUM(211-213) HTP(428-429), `SRA (IXY+n),r` ZUM(214-216) HTP(430-431), `SL1 (IXY+n),r` undocumented, `SRL (IXY+n),r` ZUM(217-219) HTP(432-433) */
+      case 0x40 /*[0xDD|0xFD],[0xCB],[0x40-0x7F]*/ -> {
+        bit_m_n((opCode & 0x38) >>> 3, bus.cpuReadMemByte(address));
+      } /* `BIT m,(IXY+n)` ZUM(228-231) HTP(213-216) */
+      case 0x80 /*[0xDD|0xFD],[0xCB],[0x80-0xBF]*/ -> {
+        setAdditionalRegister(
+            address, opCode, res_m_n((opCode & 0x38) >>> 3, bus.cpuReadMemByte(address)));
+      } /* `RES m,(IXY+n),r` ZUM(236-237) HTP(385-387) */
+      case 0xC0 /*[0xDD|0xFD],[0xCB],[0xC0-0xFF]*/ -> {
+        setAdditionalRegister(
+            address, opCode, set_m_n((opCode & 0x38) >>> 3, bus.cpuReadMemByte(address)));
+      } /* `SET m,(IXY+n),r` ZUM(234-235) HTP(425-427) */
     }
   }
 
