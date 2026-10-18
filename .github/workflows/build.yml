@@ -44,3 +44,8 @@ jobs:
 
       - name: "Build and test"
         run: ./gradlew build
+
+      # Release the daemon's lock files, which otherwise stop the basic cache saving on Windows.
+      - name: "Stop the Gradle daemon"
+        if: always()
+        run: ./gradlew --stop
