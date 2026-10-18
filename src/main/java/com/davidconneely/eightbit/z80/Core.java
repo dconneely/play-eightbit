@@ -534,11 +534,11 @@ public final class Core {
 
   // Decode (0xDD|0xFD, 0x80-0xBF) op-codes.
   private void decodeXYQ2(int opCode, IntSupplier rrGet) {
-    // `ADD A,r` ZUM(144-145) HTP(196-199), `ADC A,r` ZUM(146-147) HTP(190-191),
-    // `SUB r` ZUM(148-149) HTP(434-435), `SBC A,r` ZUM(150-151) HTP(420-421),
-    // `AND r` ZUM(152-153) HTP(209-210), `XOR r` ZUM(156-157) HTP(436-437),
-    // `OR r` ZUM(154-155) HTP(360-361), `CP r` ZUM(158-159) HTP(225-226),
-    // `(IXY+n)` ZUM(144-145) HTP(196-199)
+    /* `ADD A,r` ZUM(144-145) HTP(196-199), `ADC A,r` ZUM(146-147) HTP(190-191),
+    `SUB r` ZUM(148-149) HTP(434-435), `SBC A,r` ZUM(150-151) HTP(420-421),
+    `AND r` ZUM(152-153) HTP(209-210), `XOR r` ZUM(156-157) HTP(436-437),
+    `OR r` ZUM(154-155) HTP(360-361), `CP r` ZUM(158-159) HTP(225-226),
+    `(IXY+n)` ZUM(144-145) HTP(196-199) */
     int val =
         switch (opCode & 0x07) {
           case 0x00 /*aop B*/ -> state.b();
