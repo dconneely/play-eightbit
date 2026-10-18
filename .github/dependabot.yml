@@ -5,8 +5,18 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "thursday"
+      time: "20:00"
+      timezone: "Europe/London"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "thursday"
+      time: "20:00"
+      timezone: "Europe/London"
+    cooldown:
+      default-days: 7

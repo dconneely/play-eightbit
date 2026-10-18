@@ -6,17 +6,28 @@ on:
   pull_request:
     branches: [main]
 
+permissions: {}
+
+# Cancel superseded runs for a pull request, but let every push to main finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     name: "Gradle"
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 15
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
@@ -24,6 +35,9 @@ jobs:
           distribution: temurin
 
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          # The open-source (MIT) cache, not the default proprietary gradle-actions-caching.
+          cache-provider: basic
 
       - name: "Check formatting"
         run: ./gradlew spotlessCheck
