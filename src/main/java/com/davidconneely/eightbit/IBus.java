@@ -17,10 +17,9 @@ package com.davidconneely.eightbit;
  * emulated CPU and its memory accesses should be affected.
  */
 public interface IBus {
-  // ------------------------------------------------------------------------------------------------------
-  // ---------- Override the `cpuRead*` and `cpuWrite*` methods that apply _inside_ the emulator
-  // ----------
-  // ------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------
+  // ----- Override the `cpuRead*` and `cpuWrite*` methods that apply _inside_ the emulator -----
+  // --------------------------------------------------------------------------------------------
 
   /**
    * Read a byte of data from memory (with CPU side effects, specifically during M1 machine cycle).
@@ -121,9 +120,9 @@ public interface IBus {
     rawWritePortByte(portNum, data);
   }
 
-  // ----------------------------------------------------------------------------------------------
-  // ---------- Override the `rawRead*` and `rawWrite*` methods to change implementation ----------
-  // ----------------------------------------------------------------------------------------------
+  // ------------------------------------------------------------------------------------
+  // ----- Override the `rawRead*` and `rawWrite*` methods to change implementation -----
+  // ------------------------------------------------------------------------------------
 
   /**
    * Read a byte of data from memory (without CPU side effects). To be used by the emulator during
